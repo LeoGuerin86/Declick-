@@ -358,6 +358,34 @@
   .tabbtn.active{color:var(--ink);}
   .tabbtn.active svg{stroke:var(--amber);}
 
+
+  /* Reels : scènes illustrées animées + carrousel */
+  .reel .carousel{position:absolute; inset:0; z-index:0; display:flex; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain;}
+  .reel .carousel::-webkit-scrollbar{display:none;}
+  .reel .frame{flex:0 0 100%; height:100%; scroll-snap-align:start; scroll-snap-stop:always; position:relative; overflow:hidden;}
+  .reel .frame svg{position:absolute; inset:0; width:100%; height:100%; display:block;}
+  .reel .scrim,.reel .chip-tag,.reel .num,.reel .content{pointer-events:none;}
+  .reel .content button{pointer-events:auto;}
+  .reel .rail{pointer-events:none;} .reel .rail button{pointer-events:auto;}
+  .reel .cdots{position:absolute; top:12px; left:0; right:0; z-index:3; display:flex; justify-content:center; gap:6px; pointer-events:none;}
+  .reel .cdots i{width:6px; height:6px; border-radius:50%; background:rgba(255,238,224,.4); transition:all .2s;}
+  .reel .cdots i.on{background:#FFEEE0; width:18px; border-radius:4px;}
+  .reel .vprog{position:absolute; top:0; left:0; right:0; height:3px; z-index:3; background:rgba(255,238,224,.18); pointer-events:none;}
+  .reel .vprog b{display:block; height:100%; width:100%; background:var(--amber); transform-origin:0 50%; animation:vp 14s linear infinite;}
+  @keyframes vp{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .scn{pointer-events:none;}
+  .f-card{background-size:cover!important; display:flex; align-items:center; justify-content:center;}
+  .fc-veil{position:absolute; inset:0; background:rgba(58,32,16,.72);}
+  .fc-box{position:relative; width:78%; max-width:300px; margin-bottom:120px;}
+  .fc-kick{font-family:'Fredoka',Arial,sans-serif; font-size:26px; font-weight:700; color:var(--amber); margin:0 0 14px;}
+  .fc-pt{display:flex; gap:10px; align-items:flex-start; background:rgba(255,248,242,.12); border:1px solid rgba(255,238,224,.18); border-radius:14px; padding:10px 12px; margin-bottom:10px;}
+  .fc-pt span{flex:none; width:22px; height:22px; border-radius:50%; background:var(--amber); color:#3A2010; font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center;}
+  .fc-pt p{margin:0; font-size:13px; line-height:1.4; color:#FFF1E6;}
+  .fc-src{margin:12px 0 0; font-size:11px; color:#E8C2A8; font-weight:700;}
+  .byline{font-size:12px; color:var(--muted); margin:-4px 0 12px; font-weight:700;}
+  .art-quote{margin:14px 0; padding:10px 14px; border-left:4px solid var(--amber); background:var(--card); border-radius:0 12px 12px 0; font-family:'Fredoka',Arial,sans-serif; font-size:16px; line-height:1.4; color:var(--navy);}
+  .art-quote small{display:block; margin-top:6px; font-family:'Nunito Sans',Arial,sans-serif; font-size:11px; color:var(--muted); font-weight:700;}
+
   /* Version beta : l'application directement, sans maquette de téléphone */
   html,body{height:100%; overflow:hidden;}
   body{padding:0; min-height:0; height:100dvh; display:flex; align-items:stretch; justify-content:center; background:var(--navy);}
@@ -1151,7 +1179,7 @@ function renderPublish(){
   if(!sel.options.length) sel.innerHTML = TOPICS.map(t => '<option>'+t+'</option>').join("");
   const mine = PUBLISHED.filter(a => a.journalId === acc.journalId);
   document.getElementById("myPubs").innerHTML = mine.length ? mine.map(a =>
-    '<div class="my-pub"><span class="thumb" style="background:'+a.grad+'"></span><span class="info"><b>'+a.title.replace(/</g,"&lt;")+'</b><small>'+a.topic+' · '+(a.fileName||"vidéo").replace(/</g,"&lt;")+'</small></span><button onclick="deletePublished(\''+a.id+'\')">Supprimer</button></div>'
+    '<div class="my-pub"><span class="thumb" style="background:'+bgOf(a)+'"></span><span class="info"><b>'+a.title.replace(/</g,"&lt;")+'</b><small>'+a.topic+' · '+(a.fileName||"vidéo").replace(/</g,"&lt;")+'</small></span><button onclick="deletePublished(\''+a.id+'\')">Supprimer</button></div>'
   ).join("") : '<p class="no-result" style="padding:10px 0">Aucune publication pour l\'instant.</p>';
 }
 
@@ -1460,6 +1488,17 @@ const ARTICLE_INTROS = [
   "Pas besoin d'être spécialiste : voici l'essentiel à retenir, expliqué simplement et sans jargon, pour se faire sa propre opinion.",
   "Le sujet est complexe, mais il se résume en quelques idées clés. On les reprend ici, étape par étape, avec les points de vigilance."
 ];
+
+const ARTICLE_EXTRA = {
+  "Économie":["« Il ne faut pas confondre ralentissement et retournement : les ménages ajustent leurs dépenses plus vite que les statistiques ne le montrent. »","analyste économique interrogé par la rédaction","Du côté des entreprises, les carnets de commandes restent contrastés. Les secteurs exposés à l'export surveillent le taux de change, tandis que les commerces de proximité redoutent une consommation en retrait.","Les syndicats et le patronat s'accordent sur un point : la visibilité manque. Plusieurs branches demandent un calendrier clair pour les prochaines mesures."],
+  "Géopolitique":["« Dans ce type de crise, les canaux diplomatiques discrets comptent autant que les déclarations publiques. »","diplomate cité par la rédaction","Les capitales voisines suivent la situation de près. Plusieurs gouvernements ont convoqué des réunions de crise et appellent à la retenue, sans pour autant s'accorder sur la marche à suivre.","Sur le terrain, les organisations humanitaires alertent sur l'accès à l'aide et demandent des couloirs sécurisés pour les civils."],
+  "Politique":["« Un texte de cette ampleur se joue autant dans les couloirs que dans l'hémicycle. »","observateur de la vie parlementaire interrogé par la rédaction","Les groupes d'opposition dénoncent un calendrier trop serré et réclament davantage de concertation, quand la majorité met en avant l'urgence et la nécessité de trancher.","Les prochaines semaines seront décisives : commissions, amendements et éventuels recours devant le Conseil constitutionnel rythmeront la suite."],
+  "Tech":["« Chaque avancée technique pose une question d'usage : à qui profite-t-elle, et avec quelles garanties ? »","chercheuse en numérique interrogée par la rédaction","Les géants du secteur multiplient les annonces, mais les régulateurs veillent. La question de la protection des données et de la transparence des algorithmes reste au cœur des discussions.","Pour les utilisateurs, l'enjeu est concret : mieux comprendre ce que font les outils du quotidien et garder la main sur leurs paramètres."],
+  "Culture":["« Ce qui frappe, c'est l'énergie d'une scène qui se réinvente sans cesse. »","critique culturel interrogé par la rédaction","Les salles et les festivals retrouvent un public jeune, souvent attiré par des formats courts et des rencontres avec les artistes.","Pour le secteur, l'équation reste fragile : financement, droits d'auteur et place du numérique alimentent le débat."],
+  "Science":["« Une découverte n'a de valeur que si d'autres équipes parviennent à la reproduire. »","chercheur interrogé par la rédaction","L'étude a été relue par des pairs, et plusieurs laboratoires annoncent déjà vouloir tester ces résultats dans des conditions différentes.","À plus long terme, les applications possibles vont de la santé à l'énergie, mais les auteurs insistent sur la prudence : il faudra des années de validation."],
+  "Sport":["« Au très haut niveau, tout se joue dans les détails : récupération, mental, préparation. »","entraîneur interrogé par la rédaction","Le public a répondu présent et l'ambiance a marqué les esprits. Les organisateurs saluent une affluence record et un dispositif qui a bien fonctionné.","La suite du calendrier s'annonce dense : blessures, rotations et choix tactiques pèseront dans le classement final."],
+  "Environnement":["« Les solutions existent, la difficulté est de les déployer à l'échelle et à temps. »","experte en transition écologique interrogée par la rédaction","Collectivités, entreprises et associations multiplient les initiatives locales, de la rénovation des bâtiments aux circuits courts.","Reste la question du financement : sans investissements publics et privés durables, les objectifs fixés risquent de rester théoriques."]
+};
 function articleHtml(article){
   if(article.published){
     const esc = t => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;");
@@ -1472,13 +1511,19 @@ function articleHtml(article){
   const bank = ARTICLE_BANK[article.topic] || ARTICLE_BANK["Économie"];
   const h = hashStr(article.id);
   let html = "<p><b>« "+article.title+" »</b> : le sujet fait réagir, et pour de bonnes raisons. Il touche à des enjeux concrets et suscite des lectures très différentes selon les interlocuteurs.</p>";
+  html = '<p class="byline">Par la rédaction de '+article.source+' · Mis à jour il y a '+(1+h%9)+' h · '+(4+h%4)+' min de lecture</p>' + html;
   html += "<p>"+ARTICLE_INTROS[h % ARTICLE_INTROS.length]+"</p>";
+  const ex = ARTICLE_EXTRA[article.topic] || ARTICLE_EXTRA["Économie"];
+  html += "<h2>Le contexte</h2><p>Pour comprendre ce dossier, il faut revenir quelques mois en arrière. Plusieurs signaux faibles laissaient déjà entrevoir les évolutions actuelles, mais c'est la succession récente d'annonces qui a fait basculer le sujet à la une de "+article.source+".</p><p>"+ex[2]+"</p>";
+  html += '<div class="art-quote">'+ex[0]+'<small>— '+ex[1]+'</small></div>';
   bank.sections.forEach((sec, idx) => {
     html += "<h2>"+sec.h+"</h2>" + sec.p.map(t => "<p>"+t+"</p>").join("");
     if(idx === 0){
       html += '<div class="keypoints"><b>À retenir</b><ul>' + bank.points.map(t => "<li>"+t+"</li>").join("") + "</ul></div>";
     }
   });
+  html += "<h2>Les réactions</h2><p>"+ex[3]+"</p><p>Chez les jeunes adultes, le sujet suscite autant d'intérêt que de questions. Beaucoup disent manquer de repères pour trier l'information : c'est précisément pour cela que "+article.source+" propose ici un format court, relié à un article complet et sourcé.</p>";
+  html += "<h2>Ce qui change concrètement</h2><ul><li>Des décisions attendues dans les prochaines semaines.</li><li>Un suivi régulier par la rédaction, avec des mises à jour au fil des annonces.</li><li>Des ressources pour approfondir : chiffres clés, contexte et analyses.</li></ul>";
   html += "<h2>Pour aller plus loin</h2><p>Ce dossier va continuer d'évoluer. Active les notifications du compte "+article.source+" pour suivre les prochains développements, et retrouve d'autres formats courts sur le même sujet dans ton fil « Pour toi ».</p>";
   html += '<p class="art-disclaimer">Contenu fictif rédigé pour la démonstration du prototype Declick.</p>';
   return html;
@@ -1489,7 +1534,7 @@ function openArticle(articleId){
   currentArticleId = articleId;
   const body = articleHtml(a);
   const words = body.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
-  document.getElementById("articleHero").style.background = a.grad;
+  document.getElementById("articleHero").style.background = bgOf(a);
   document.getElementById("articleTag").textContent = a.topic || "Actualité";
   document.getElementById("articleTitle").textContent = a.title;
   document.getElementById("articleSrc").textContent = a.source;
@@ -1538,7 +1583,7 @@ function renderJournal(){
     '<button class="follow-btn'+(fol?" following":"")+'" onclick="toggleFollow(\''+j.id+'\')">'+(fol?"Abonné":"Suivre")+'</button></div>'+
     '<div class="journal-stats"><div><b>'+arts.length+'</b><span>Contenus</span></div><div><b>'+followerCount(j).toLocaleString("fr-FR")+'</b><span>Abonnés</span></div></div>'+
     '<p class="section-label">Contenus publiés</p>'+
-    arts.map(a => '<button class="j-article" onclick="openArticle(\''+a.id+'\')"><span class="thumb" style="background:'+a.grad+'"></span><span><b>'+a.title+'</b><small>'+(a.topic||"Actualité")+' · '+a.duration+'</small></span></button>').join("");
+    arts.map(a => '<button class="j-article" onclick="openArticle(\''+a.id+'\')"><span class="thumb" style="background:'+bgOf(a)+'"></span><span><b>'+a.title+'</b><small>'+(a.topic||"Actualité")+' · '+a.duration+'</small></span></button>').join("");
 }
 function openJournal(id){
   if(!JOURNAL_BY_ID[id]) return;
@@ -1580,7 +1625,7 @@ function renderSearch(){
       seen[a.title] = true; return true;
     }).slice(0, 12);
     html += '<p class="section-label" style="margin-top:18px">Contenus</p>';
-    html += arts.length ? arts.map(a => '<button class="j-article" onclick="openArticle(\''+a.id+'\')"><span class="thumb" style="background:'+a.grad+'"></span><span><b>'+a.title+'</b><small>'+a.source+' · '+a.duration+'</small></span></button>').join("") : '<p class="no-result">Aucun contenu trouvé.</p>';
+    html += arts.length ? arts.map(a => '<button class="j-article" onclick="openArticle(\''+a.id+'\')"><span class="thumb" style="background:'+bgOf(a)+'"></span><span><b>'+a.title+'</b><small>'+a.source+' · '+a.duration+'</small></span></button>').join("") : '<p class="no-result">Aucun contenu trouvé.</p>';
   }
   document.getElementById("searchResults").innerHTML = html;
 }
@@ -1615,7 +1660,7 @@ function renderChat(){
     last = m.ts;
     if(m.articleId && ALL_ARTICLES[m.articleId]){
       const a = ALL_ARTICLES[m.articleId];
-      html += '<button class="share-card '+m.from+'" onclick="openArticle(\''+a.id+'\')"><div class="sc-img" style="background:'+a.grad+'"></div><div class="sc-body"><b>'+a.title+'</b><small>'+a.source+'</small></div></button>';
+      html += '<button class="share-card '+m.from+'" onclick="openArticle(\''+a.id+'\')"><div class="sc-img" style="background:'+bgOf(a)+'"></div><div class="sc-body"><b>'+a.title+'</b><small>'+a.source+'</small></div></button>';
     } else {
       html += '<div class="bubble '+m.from+'">'+String(m.text).replace(/</g,"&lt;")+'</div>';
     }
@@ -1698,6 +1743,165 @@ function postComment(){
   });
 }
 
+/* ===== Scènes illustrées animées (dessinées en code) ===== */
+const SC_CSS = ".a{animation:fl 6s ease-in-out infinite}@keyframes fl{50%{transform:translateY(-14px)}}"+
+".b{animation:dr 24s linear infinite alternate}@keyframes dr{to{transform:translateX(46px)}}"+
+".c{transform-box:fill-box;transform-origin:center;animation:sp 28s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}"+
+".c2{transform-box:fill-box;transform-origin:center;animation:sp 3.5s linear infinite}"+
+".d{animation:pu 3s ease-in-out infinite}@keyframes pu{50%{opacity:.25}}"+
+".e{animation:tw 2.4s ease-in-out infinite}@keyframes tw{50%{opacity:.15}}"+
+".f{transform-box:fill-box;transform-origin:50% 100%;animation:gr 5s ease-in-out infinite alternate}@keyframes gr{from{transform:scaleY(.5)}to{transform:scaleY(1)}}"+
+".g{stroke-dasharray:14 10;animation:ds 2.5s linear infinite}@keyframes ds{to{stroke-dashoffset:-48}}"+
+".w{transform-box:fill-box;transform-origin:0 50%;animation:wv 1.8s ease-in-out infinite alternate}@keyframes wv{from{transform:skewY(-7deg) scaleX(1)}to{transform:skewY(7deg) scaleX(.88)}}"+
+".fall{animation:fa 5s linear infinite}@keyframes fa{0%{transform:translateY(-40px) rotate(0);opacity:0}15%{opacity:1}100%{transform:translateY(260px) rotate(220deg);opacity:0}}"+
+".sway{transform-box:fill-box;transform-origin:50% 100%;animation:sw 4s ease-in-out infinite alternate}@keyframes sw{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}"+
+".scr{animation:sc 7s linear infinite}@keyframes sc{to{transform:translateY(-110px)}}"+
+".kb{transform-box:view-box;transform-origin:50% 55%;animation:kb 22s ease-in-out infinite alternate}@keyframes kb{from{transform:scale(1.04)}to{transform:scale(1.2) translate(-8px,-10px)}}"+
+"@media (prefers-reduced-motion:reduce){*{animation:none!important}}";
+const R=(x,y,w,h,f,c,s,rx)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'"'+(c?' class="'+c+'"':'')+(s?' style="'+s+'"':'')+(rx?' rx="'+rx+'"':'')+'/>';
+const CI=(x,y,r,f,c,s)=>'<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+f+'"'+(c?' class="'+c+'"':'')+(s?' style="'+s+'"':'')+'/>';
+const PA=(d,at)=>'<path d="'+d+'" '+at+'/>';
+const TX=(x,y,t,sz,f,c,s)=>'<text x="'+x+'" y="'+y+'" font-family="Fredoka,Arial,sans-serif" font-weight="700" font-size="'+sz+'" fill="'+f+'" text-anchor="middle"'+(c?' class="'+c+'"':'')+(s?' style="'+s+'"':'')+'>'+t+'</text>';
+const dl = n => 'animation-delay:-'+n+'s';
+const STARS = [[30,60],[90,30],[150,90],[220,40],[300,70],[330,150],[60,160],[260,120],[120,200],[20,240],[340,260],[200,20],[310,20],[70,110]];
+const stars = (L,n) => STARS.slice(0,n||14).map((s,i)=>CI(s[0],s[1],1.6+(i%3)*.6,L,'e',dl(i*.4))).join("");
+const PAL = {
+  "Économie":      {b1:"#3A2010",b2:"#7A3D1C",A:"#E8985E",L:"#FFD9A8",D:"#5A2D14"},
+  "Géopolitique":  {b1:"#1E2A3A",b2:"#34566B",A:"#E37B42",L:"#B7DDEB",D:"#2A4256"},
+  "Politique":     {b1:"#3A1F2A",b2:"#7A3445",A:"#E8985E",L:"#F6D2C0",D:"#5A2A38"},
+  "Tech":          {b1:"#1B1F33",b2:"#33386A",A:"#E37B42",L:"#8FE0D2",D:"#292E57"},
+  "Culture":       {b1:"#3A1030",b2:"#7A2F62",A:"#FFB36B",L:"#F8B2D2",D:"#5A1F49"},
+  "Science":       {b1:"#0F1A33",b2:"#2C3A72",A:"#FFB36B",L:"#B6C9FF",D:"#1F2B57"},
+  "Sport":         {b1:"#123A2A",b2:"#23794F",A:"#FFB36B",L:"#F6F0DD",D:"#1B5C3D"},
+  "Environnement": {b1:"#12362E",b2:"#34845F",A:"#FFD27A",L:"#C6EFD0",D:"#1F5C47"}
+};
+const SCENES = {
+"Économie":[
+ p=>{ let s="";
+  for(let i=0;i<6;i++) s+=PA("M0 "+(150+i*80)+"H360","stroke='"+p.L+"' stroke-opacity='.12'");
+  [80,120,100,170,150,230,280].forEach((h,i)=>{ s+=R(34+i*44,560-h,30,h,i%2?p.A:p.L,'f',dl(i*.6),6); });
+  s+=PA("M49 470L93 430L137 450L181 380L225 400L269 320L313 270","fill='none' stroke='"+p.L+"' stroke-width='4' stroke-linecap='round' class='g'");
+  s+=CI(313,270,9,p.A,'d');
+  s+=CI(70,120,28,p.A,'a')+TX(70,131,'€',30,p.D,'a')+CI(285,95,21,p.L,'a',dl(2))+TX(285,103,'€',22,p.D,'a',dl(2))+CI(200,175,13,p.A,'a',dl(4));
+  s+=R(0,560,360,80,p.D); return s; },
+ p=>{ let s=stars(p.L,8), xs=[0,52,104,156,214,266,316], hs=[200,300,240,360,260,330,220], ws=[48,48,48,56,48,48,44];
+  xs.forEach((x,i)=>{ s+=R(x,560-hs[i],ws[i],hs[i],i%2?p.D:"#6B3418");
+   for(let r=0;r<Math.floor(hs[i]/38);r++) for(let c=0;c<3;c++) if((r*3+c+i)%3!==1) s+=R(x+7+c*14,572-hs[i]+r*38-10+16,8,12,p.A,'d',dl(((r+c+i)%5)*.7)); });
+  s+=PA("M0 150Q45 90 90 140T180 120T270 150T360 100","fill='none' stroke='"+p.A+"' stroke-width='4' class='g'");
+  s+=CI(300,70,24,p.A,'a')+TX(300,80,'€',26,p.D,'a')+CI(60,60,18,p.L,'a',dl(3))+R(0,560,360,80,"#2A1408"); return s; }],
+"Géopolitique":[
+ p=>{ let s=stars(p.L,12)+'<clipPath id="gcl"><circle cx="180" cy="320" r="128"/></clipPath>';
+  s+=CI(180,320,128,p.D)+'<g clip-path="url(#gcl)"><g class="b">'+PA("M60 260q30-40 70-20t20 50-50 30-40-60z","fill='"+p.A+"' fill-opacity='.85'")+PA("M190 330q50-30 80 10t-10 70-60 10-10-90z","fill='"+p.A+"' fill-opacity='.85'")+PA("M110 400q30-10 40 20t-30 40-30-30z","fill='"+p.A+"' fill-opacity='.7'")+PA("M250 240q30-20 50 10t-20 30-40-10z","fill='"+p.A+"' fill-opacity='.7'")+'</g></g>';
+  for(let i=0;i<3;i++) s+='<ellipse cx="180" cy="320" rx="'+(40+i*44)+'" ry="128" fill="none" stroke="'+p.L+'" stroke-opacity=".3" stroke-width="1.5" class="d" style="'+dl(i)+'"/>';
+  for(let i=1;i<4;i++) s+=PA("M52 "+(320-i*40)+"Q180 "+(320-i*40+14)+" 308 "+(320-i*40)+"M52 "+(320+i*40)+"Q180 "+(320+i*40+14)+" 308 "+(320+i*40),"fill='none' stroke='"+p.L+"' stroke-opacity='.22'");
+  s+='<ellipse cx="180" cy="320" rx="175" ry="46" fill="none" stroke="'+p.A+'" stroke-width="2.5" transform="rotate(-22 180 320)" class="g"/>';
+  s+='<g transform="rotate(-22 180 320)"><circle r="8" fill="'+p.L+'"><animateMotion dur="9s" repeatCount="indefinite" path="M5 320a175 46 0 1 0 350 0a175 46 0 1 0 -350 0"/></circle></g>'; return s; },
+ p=>{ let s='<pattern id="gdt" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.4" fill="'+p.L+'" fill-opacity=".25"/></pattern>'+R(0,0,360,640,'url(#gdt)');
+  s+='<g class="b">'+PA("M20 220q50-60 120-30t30 70-70 50-90-20z","fill='"+p.D+"'")+PA("M200 200q70-40 130 0t10 80-90 40-60-60z","fill='"+p.D+"'")+PA("M90 420q60-30 100 10t-20 70-90 0z","fill='"+p.D+"'")+PA("M240 430q50-20 80 20t-30 50-60-20z","fill='"+p.D+"'")+'</g>';
+  const pts=[[90,230],[260,230],[130,440],[280,450],[180,330]];
+  [[0,1],[1,3],[0,2],[2,4],[4,3]].forEach((l,i)=>{ const a=pts[l[0]],b=pts[l[1]]; s+=PA("M"+a[0]+" "+a[1]+"Q"+((a[0]+b[0])/2)+" "+(Math.min(a[1],b[1])-60)+" "+b[0]+" "+b[1],"fill='none' stroke='"+p.A+"' stroke-width='2.5' class='g' style='"+dl(i)+"'"); });
+  pts.forEach((q,i)=>{ s+=CI(q[0],q[1],16,p.A,'d',dl(i*.5))+CI(q[0],q[1],6,p.L); }); return s; }],
+"Politique":[
+ p=>{ let s=CI(180,300,150,p.A).replace("fill=","fill-opacity='.18' fill=")+'<g class="b">'+R(20,90,90,24,p.L,'',"opacity:.25",12)+R(240,140,100,26,p.L,'',"opacity:.2",13)+'</g>';
+  s+=PA("M60 330L180 240L300 330Z","fill='"+p.L+"'")+R(60,330,240,18,p.L)+CI(180,300,16,p.A);
+  for(let i=0;i<6;i++) s+=R(76+i*40,350,22,150,"#FFEBDD")+R(72+i*40,350,30,8,p.L)+R(72+i*40,492,30,8,p.L);
+  s+=R(50,500,260,16,p.L)+R(34,516,292,16,"#E9B79E")+R(18,532,324,16,"#D79A80")+R(0,548,360,92,p.D);
+  s+=R(178,150,4,100,p.L)+PA("M182 152h66l-14 20 14 20h-66z","fill='"+p.A+"' class='w'"); return s; },
+ p=>{ let s=stars(p.L,8);
+  s+=R(70,380,220,170,p.L,'','',14)+R(70,380,220,36,p.A,'','',14)+R(130,396,100,10,p.D,'','',5);
+  [0,1,2].forEach(i=>{ s+=R(150+i*18-18,150,46,60,"#FFF8F2",'fall',dl(i*1.6)+";transform-origin:center;transform-box:fill-box",4); });
+  s+=CI(180,300,34,p.A,'d')+PA("M164 300l12 12 22-26","fill='none' stroke='"+p.D+"' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'");
+  s+=R(0,550,360,90,p.D); return s; }],
+"Tech":[
+ p=>{ let s='';
+  const tr=["M180 320H40V120","M180 320H320V200","M180 320V560H90","M180 320V90H260","M150 320H80V440H20","M210 320H280V500H340"];
+  tr.forEach((d,i)=>{ s+=PA(d,"fill='none' stroke='"+p.L+"' stroke-opacity='.35' stroke-width='3'")+PA(d,"fill='none' stroke='"+p.A+"' stroke-width='3' class='g' style='"+dl(i*.5)+"'"); });
+  [[40,120],[320,200],[90,560],[260,90],[20,440],[340,500]].forEach((q,i)=>{ s+=CI(q[0],q[1],9,p.L,'d',dl(i*.5)); });
+  s+=R(110,250,140,140,p.D,'','',18)+'<rect x="110" y="250" width="140" height="140" rx="18" fill="none" stroke="'+p.L+'" stroke-width="3"/>'+R(140,280,80,80,p.A,'d','',10)+TX(180,338,'AI',34,p.D);
+  for(let i=0;i<4;i++) s+=R(126+i*30,238,10,14,p.L)+R(126+i*30,388,10,14,p.L); return s; },
+ p=>{ let s=stars(p.L,6)+R(100,110,160,340,"#12162B",'','',26);
+  s+=R(108,126,144,308,p.D,'','',18)+'<g clip-path="url(#pcl)"><g class="scr">';
+  for(let i=0;i<14;i++) s+=R(122,140+i*26,40+((i*37)%80),9,i%3?p.L:p.A,'','opacity:.8',4);
+  s+='</g></g><clipPath id="pcl"><rect x="108" y="126" width="144" height="308" rx="18"/></clipPath>';
+  s+=R(30,170,110,40,p.A,'a',dl(1),20)+R(230,260,100,40,p.L,'a',dl(3),20)+CI(60,330,16,p.L,'d')+CI(300,150,12,p.A,'d',dl(1));
+  s+=R(0,540,360,100,"#12162B"); return s; }],
+"Culture":[
+ p=>{ let s=PA("M130 0L40 560H320L230 0Z","fill='"+p.A+"' fill-opacity='.2' class='d'")+R(0,540,360,100,"#2A0A22");
+  s+=PA("M0 0H110Q70 200 90 560H0Z","fill='#8E2B52'")+PA("M360 0H250Q290 200 270 560H360Z","fill='#8E2B52'")+PA("M0 0H360V50Q270 90 180 50T0 50Z","fill='#B03A63'");
+  for(let i=0;i<4;i++) s+=PA("M"+(20+i*22)+" 50Q"+(30+i*22)+" 300 "+(20+i*22)+" 560","stroke='#5C1632' stroke-opacity='.5' fill='none'")+PA("M"+(340-i*22)+" 50Q"+(330-i*22)+" 300 "+(340-i*22)+" 560","stroke='#5C1632' stroke-opacity='.5' fill='none'");
+  s+=CI(180,430,26,p.D)+PA("M156 540q0-60 24-60t24 60z","fill='"+p.D+"'")+R(178,380,4,50,p.L)+CI(180,372,9,p.L,'d')+stars(p.L,6); return s; },
+ p=>{ let s=stars(p.L,8)+'<g class="c">'+CI(180,310,140,"#17060F");
+  [120,100,80,60].forEach(r=>{ s+='<circle cx="180" cy="310" r="'+r+'" fill="none" stroke="'+p.L+'" stroke-opacity=".18" stroke-width="2"/>'; });
+  s+=CI(180,310,44,p.A)+CI(180,310,7,"#17060F")+PA("M180 310L270 300","stroke='"+p.L+"' stroke-opacity='.25' stroke-width='3'")+'</g>';
+  s+=PA("M310 120L230 270","stroke='"+p.L+"' stroke-width='6' stroke-linecap='round'")+CI(310,120,14,p.L);
+  s+=TX(70,200,'♪',44,p.L,'a')+TX(300,430,'♫',40,p.A,'a',dl(2))+TX(60,470,'♪',30,p.A,'a',dl(4))+TX(310,540,'♫',34,p.L,'a',dl(1)); return s; }],
+"Science":[
+ p=>{ let s=stars(p.L,14)+'<g transform="rotate(-24 180 320)">'+'<ellipse cx="180" cy="320" rx="170" ry="38" fill="none" stroke="'+p.L+'" stroke-opacity=".55" stroke-width="10"/></g>';
+  s+=CI(180,320,92,p.A)+CI(150,290,92,"#FFD9A8").replace("fill=","fill-opacity='.0' fill=")+PA("M92 300q90 40 180-6","fill='none' stroke='"+p.D+"' stroke-opacity='.3' stroke-width='10'")+PA("M100 350q80 30 160-6","fill='none' stroke='"+p.D+"' stroke-opacity='.25' stroke-width='8'");
+  s+='<g transform="rotate(-24 180 320)"><path d="M10 320a170 38 0 0 0 340 0" fill="none" stroke="'+p.L+'" stroke-opacity=".6" stroke-width="10"/></g>';
+  s+='<g transform="rotate(-24 180 320)"><circle r="10" fill="'+p.L+'"><animateMotion dur="11s" repeatCount="indefinite" path="M10 320a170 38 0 1 0 340 0a170 38 0 1 0 -340 0"/></circle></g>'; return s; },
+ p=>{ let s=stars(p.L,10)+'<g transform="translate(180 320)">'+CI(0,0,22,p.A,'d');
+  [0,60,120].forEach((r,i)=>{ s+='<g transform="rotate('+r+')"><ellipse rx="140" ry="48" fill="none" stroke="'+p.L+'" stroke-opacity=".5" stroke-width="2.5"/><circle r="9" fill="'+(i?p.L:p.A)+'"><animateMotion dur="'+(5+i*1.7)+'s" repeatCount="indefinite" path="M-140 0a140 48 0 1 0 280 0a140 48 0 1 0 -280 0"/></circle></g>'; });
+  s+='</g>'+CI(60,520,14,p.L,'a')+CI(310,110,10,p.A,'a',dl(3)); return s; }],
+"Sport":[
+ p=>{ let s=R(0,330,360,310,p.D);
+  for(let i=0;i<6;i++) s+=R(0,330+i*52,360,26,"#fff","","opacity:.05");
+  s+='<ellipse cx="180" cy="470" rx="150" ry="70" fill="none" stroke="'+p.L+'" stroke-opacity=".7" stroke-width="3"/>'+PA("M30 470H330","stroke='"+p.L+"' stroke-opacity='.6' stroke-width='3'")+CI(180,470,6,p.L);
+  s+=R(40,130,6,200,"#E9D2BC")+R(314,130,6,200,"#E9D2BC")+R(26,110,34,22,p.A,'d')+R(300,110,34,22,p.A,'d',dl(1));
+  s+=PA("M20 330Q180 -20 340 330","fill='none' stroke='"+p.L+"' stroke-opacity='.35' stroke-width='3' stroke-dasharray='4 8'");
+  s+='<g><circle r="14" fill="#fff"><animateMotion dur="3.8s" repeatCount="indefinite" path="M20 330Q180 -20 340 330"/></circle><circle r="5" fill="'+p.D+'"><animateMotion dur="3.8s" repeatCount="indefinite" path="M20 330Q180 -20 340 330"/></circle></g>'; return s; },
+ p=>{ let s=R(0,0,360,640,p.D);
+  for(let i=0;i<6;i++) s+='<ellipse cx="180" cy="330" rx="'+(70+i*20)+'" ry="'+(120+i*30)+'" fill="none" stroke="'+(i%2?p.L:p.A)+'" stroke-opacity=".55" stroke-width="10"/>';
+  s+=PA("M110 210H250","stroke='#fff' stroke-width='4' stroke-dasharray='8 6'");
+  [[7,5.2],[9,6.4],[11,8]].forEach((d,i)=>{ s+='<circle r="9" fill="'+(i?p.A:"#fff")+'"><animateMotion dur="'+d[0]+'s" repeatCount="indefinite" path="M'+(180-(70+(i+1)*40))+' 330a'+(70+(i+1)*40)+' '+(120+(i+1)*60)+' 0 1 0 '+((70+(i+1)*40)*2)+' 0a'+(70+(i+1)*40)+' '+(120+(i+1)*60)+' 0 1 0 -'+((70+(i+1)*40)*2)+' 0"/></circle>'; });
+  s+=TX(180,340,'GO',60,p.L,'d'); return s; }],
+"Environnement":[
+ p=>{ let s=CI(260,150,60,p.A,'d')+CI(260,150,40,"#FFF1C4")+'<g class="b">'+R(30,90,90,22,"#fff","","opacity:.25",11)+R(210,230,100,24,"#fff","","opacity:.2",12)+'</g>';
+  s+=PA("M0 430Q90 330 180 400T360 380V640H0Z","fill='"+p.D+"'")+PA("M0 500Q110 420 220 480T360 460V640H0Z","fill='#164A39'");
+  [[90,360,1],[180,330,1.3],[280,350,.9]].forEach((t,i)=>{ s+=R(t[0]-3*t[2],t[1],6*t[2],110*t[2],"#F6F0DD")+'<g transform="translate('+t[0]+' '+t[1]+')"><g class="c2" style="animation-duration:'+(4+i*1.5)+'s">'+PA("M0 0L-4 -"+(58*t[2])+"L4 -"+(58*t[2])+"Z","fill='#F6F0DD'")+'<g transform="rotate(120)">'+PA("M0 0L-4 -"+(58*t[2])+"L4 -"+(58*t[2])+"Z","fill='#F6F0DD'")+'</g><g transform="rotate(240)">'+PA("M0 0L-4 -"+(58*t[2])+"L4 -"+(58*t[2])+"Z","fill='#F6F0DD'")+'</g></g>'+CI(0,0,5,p.A)+'</g>'; }); return s; },
+ p=>{ let s=R(0,0,360,640,"transparent")+CI(70,110,40,p.A,'d')+'<g class="b">'+R(180,70,110,22,"#fff","","opacity:.2",11)+'</g>';
+  s+=PA("M0 400H360V640H0Z","fill='"+p.D+"'")+PA("M0 520Q60 500 120 520T240 520T360 520V640H0Z","fill='#2E8CA8' fill-opacity='.8' class='b'");
+  [[40,420,1],[110,400,1.3],[200,430,.9],[290,400,1.2],[340,440,.8]].forEach((t,i)=>{ s+='<g class="sway" style="'+dl(i)+'">'+R(t[0]-4*t[2],t[1]+60*t[2],8*t[2],50*t[2],"#5B3A1E")+PA("M"+t[0]+" "+(t[1]-70*t[2])+"l"+(-36*t[2])+" 70 "+(72*t[2])+" 0z","fill='#2F9E6B'")+PA("M"+t[0]+" "+(t[1]-30*t[2])+"l"+(-44*t[2])+" 80 "+(88*t[2])+" 0z","fill='#237F55'")+'</g>'; });
+  [[80,100],[200,60],[300,120]].forEach((q,i)=>{ s+=PA("M"+q[0]+" "+q[1]+"q10 -12 20 0q10 -12 20 0","fill='none' stroke='"+p.L+"' stroke-width='2.5' class='a' style='"+dl(i*2)+"'"); });
+  [[120,0],[250,1.5],[310,3]].forEach((q,i)=>{ s+='<g transform="translate('+q[0]+' 80)">'+PA("M0 0q12 -10 20 4q-8 10 -20 -4z","fill='"+p.A+"' class='fall' style='"+dl(q[1])+"'")+'</g>'; }); return s; }]
+};
+function sceneSVG(topic, v, seed, forUrl){
+  const p = PAL[topic] || PAL["Économie"], list = SCENES[topic] || SCENES["Économie"];
+  const body = list[v % list.length](p);
+  const hue = ((seed||0) % 5 - 2) * 7;
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 640" preserveAspectRatio="xMidYMid slice" class="scn" style="filter:hue-rotate('+hue+'deg)">'+
+    (forUrl ? '<style>'+SC_CSS+'</style>' : '')+
+    '<defs><linearGradient id="bg'+topic.length+v+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+p.b1+'"/><stop offset="1" stop-color="'+p.b2+'"/></linearGradient></defs>'+
+    '<rect width="360" height="640" fill="url(#bg'+topic.length+v+')"/><g class="kb">'+body+'</g></svg>';
+}
+const _bgCache = {};
+function bgOf(a){
+  if(!a.topic || !SCENES[a.topic]) return a.grad;
+  const v = hashStr(a.id) % 2, k = a.topic+v;
+  if(!_bgCache[k]) _bgCache[k] = 'url("data:image/svg+xml,'+encodeURIComponent(sceneSVG(a.topic, v, 0, true))+'") center/cover no-repeat';
+  return _bgCache[k];
+}
+function reelFrames(article){
+  const h = hashStr(article.id), v = h % 2, tp = article.topic;
+  let html = '<div class="frame">'+sceneSVG(tp, v, h)+'</div><div class="frame">'+sceneSVG(tp, 1-v, h+3)+'</div>';
+  const bank = ARTICLE_BANK[tp];
+  if(!article.published && bank){
+    html += '<div class="frame f-card" style="background:'+bgOf(article)+'"><div class="fc-veil"></div><div class="fc-box"><p class="fc-kick">À retenir</p>'+
+      bank.points.slice(0,3).map((t,i)=>'<div class="fc-pt"><span>'+(i+1)+'</span><p>'+t+'</p></div>').join("")+
+      '<p class="fc-src">Source : '+article.source+'</p></div></div>';
+  }
+  return html;
+}
+document.addEventListener("scroll", function(e){
+  const t = e.target;
+  if(t && t.classList && t.classList.contains("carousel")){
+    const i = Math.round(t.scrollLeft / Math.max(1,t.clientWidth));
+    const dots = t.parentNode.querySelectorAll(".cdots i");
+    dots.forEach((d,k)=>d.classList.toggle("on", k===i));
+  }
+}, true);
+
+(function(){ const st=document.createElement('style'); st.textContent=SC_CSS; document.head.appendChild(st); })();
 function renderReel(article, opts){
   const isOn = k => state[k].indexOf(article.id) >= 0;
   const numHtml = opts.number ? '<p class="num">'+opts.number+'</p>' : "";
@@ -1706,6 +1910,8 @@ function renderReel(article, opts){
   const commentCount = seededComments(article.id).length + ((state.comments[article.id]||[]).length);
   return (
     '<div class="reel" style="background:'+article.grad+'">'+
+      '<div class="carousel">'+reelFrames(article)+'</div>'+
+      '<div class="cdots">'+(article.published||!ARTICLE_BANK[article.topic]?'<i class="on"></i><i></i>':'<i class="on"></i><i></i><i></i>')+'</div><div class="vprog"><b></b></div>'+
       '<div class="scrim"></div>'+tagHtml+numHtml+
       '<div class="content"><h3>'+article.title+'</h3>'+
         '<div class="src"><span class="dot"></span><button class="src-link" onclick="openJournal(\''+JOURNAL_BY_NAME[article.source].id+'\')">'+article.source+'</button><time> · '+article.duration+'</time></div>'+
@@ -1752,7 +1958,7 @@ function renderContentGrid(){
   }
   grid.innerHTML = ids.map(id => {
     const a = ALL_ARTICLES[id]; if(!a) return "";
-    return '<button class="grid-tile" style="background:'+a.grad+';border:none;padding:0;cursor:pointer;text-align:left;font-family:inherit" onclick="openArticle(\''+id+'\')"><div class="tile-scrim"></div><span>'+a.title+'</span></button>';
+    return '<button class="grid-tile" style="background:'+bgOf(a)+';border:none;padding:0;cursor:pointer;text-align:left;font-family:inherit" onclick="openArticle(\''+id+'\')"><div class="tile-scrim"></div><span>'+a.title+'</span></button>';
   }).join("");
   updateLibraryCounts();
 }
