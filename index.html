@@ -358,15 +358,13 @@
   .tabbtn.active{color:var(--ink);}
   .tabbtn.active svg{stroke:var(--amber);}
 
-  /* Plein écran sur téléphone : plus de maquette de téléphone */
-  @media (max-width: 600px){
-    html,body{height:100%; overflow:hidden;}
-    body{padding:0; min-height:0; height:100dvh; display:block; background:var(--cream);}
-    .stage{display:block; gap:0; height:100dvh;}
-    .stage-title,.notch,.statusbar{display:none;}
-    .phone{width:100vw; height:100dvh; border-radius:0; border:none; box-shadow:none;}
-    .screen{padding-top:env(safe-area-inset-top);}
-  }
+  /* Version beta : l'application directement, sans maquette de téléphone */
+  html,body{height:100%; overflow:hidden;}
+  body{padding:0; min-height:0; height:100dvh; display:flex; align-items:stretch; justify-content:center; background:var(--navy);}
+  .stage{display:block; gap:0; height:100dvh; width:100%; max-width:480px;}
+  .stage-title,.notch,.statusbar{display:none;}
+  .phone{width:100%; height:100dvh; border-radius:0; border:none; box-shadow:none;}
+  .screen{padding-top:env(safe-area-inset-top);}
 </style>
 </head>
 <body>
