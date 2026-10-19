@@ -373,6 +373,15 @@
   .reel .vprog{position:absolute; top:0; left:0; right:0; height:3px; z-index:3; background:rgba(255,238,224,.18); pointer-events:none;}
   .reel .vprog b{display:block; height:100%; width:100%; background:var(--amber); transform-origin:0 50%; animation:vp 14s linear infinite;}
   @keyframes vp{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .reel .vid{position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none;}
+  .reel .vlayer{position:absolute; inset:0;} .reel .vlayer svg{position:absolute; inset:0; width:100%; height:100%;}
+  .reel .vA{animation:vfa 12s infinite;} .reel .vB{animation:vfb 12s infinite;}
+  @keyframes vfa{0%,45%{opacity:1}55%,95%{opacity:0}100%{opacity:1}}
+  @keyframes vfb{0%,45%{opacity:0}55%,95%{opacity:1}100%{opacity:0}}
+  .reel .vcap{position:absolute; left:10%; right:22%; top:34%; margin:0; text-align:center; font-family:'Fredoka',Arial,sans-serif; font-weight:700; font-size:20px; line-height:1.3; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.7); opacity:0; animation:vcp 12s infinite;}
+  @keyframes vcp{0%{opacity:0;transform:translateY(8px)}4%,30%{opacity:1;transform:none}34%,100%{opacity:0}}
+  .reel .vbadge{position:absolute; top:22px; left:14px; z-index:3; font-size:10px; font-weight:800; letter-spacing:.04em; padding:4px 9px; border-radius:20px; background:rgba(58,32,16,.6); color:#FFEEE0; pointer-events:none;}
+  .reel .vbadge.cb{background:var(--amber); color:#3A2010;}
   .scn{pointer-events:none;}
   .f-card{background-size:cover!important; display:flex; align-items:center; justify-content:center;}
   .fc-veil{position:absolute; inset:0; background:rgba(58,32,16,.72);}
@@ -1881,6 +1890,13 @@ function bgOf(a){
   if(!_bgCache[k]) _bgCache[k] = 'url("data:image/svg+xml,'+encodeURIComponent(sceneSVG(a.topic, v, 0, true))+'") center/cover no-repeat';
   return _bgCache[k];
 }
+function isVideo(a){ return a.published || !ARTICLE_BANK[a.topic] || (parseInt(String(a.id).replace(/\D/g,""),10)||hashStr(a.id)) % 2 === 1; }
+function reelVideo(article){
+  const h = hashStr(article.id), v = h % 2, tp = article.topic, bank = ARTICLE_BANK[tp];
+  let html = '<div class="vid"><div class="vlayer vA">'+sceneSVG(tp, v, h)+'</div><div class="vlayer vB">'+sceneSVG(tp, 1-v, h+3)+'</div>';
+  if(bank) html += bank.points.slice(0,3).map((t,i)=>'<p class="vcap" style="animation-delay:'+(i*4)+'s">'+t.split(/[,:;.]/)[0]+'</p>').join("");
+  return html + '<span class="vbadge">▶ Vidéo</span></div>';
+}
 function reelFrames(article){
   const h = hashStr(article.id), v = h % 2, tp = article.topic;
   let html = '<div class="frame">'+sceneSVG(tp, v, h)+'</div><div class="frame">'+sceneSVG(tp, 1-v, h+3)+'</div>';
@@ -1910,11 +1926,10 @@ function renderReel(article, opts){
   const commentCount = seededComments(article.id).length + ((state.comments[article.id]||[]).length);
   return (
     '<div class="reel" style="background:'+article.grad+'">'+
-      '<div class="carousel">'+reelFrames(article)+'</div>'+
-      '<div class="cdots">'+(article.published||!ARTICLE_BANK[article.topic]?'<i class="on"></i><i></i>':'<i class="on"></i><i></i><i></i>')+'</div><div class="vprog"><b></b></div>'+
+      (isVideo(article) ? reelVideo(article)+'<div class="vprog"><b></b></div>' : '<div class="carousel">'+reelFrames(article)+'</div><div class="cdots"><i class="on"></i><i></i><i></i></div><span class="vbadge cb">Carrousel</span>')+
       '<div class="scrim"></div>'+tagHtml+numHtml+
       '<div class="content"><h3>'+article.title+'</h3>'+
-        '<div class="src"><span class="dot"></span><button class="src-link" onclick="openJournal(\''+JOURNAL_BY_NAME[article.source].id+'\')">'+article.source+'</button><time> · '+article.duration+'</time></div>'+
+        '<div class="src"><span class="dot"></span><button class="src-link" onclick="openJournal(\''+JOURNAL_BY_NAME[article.source].id+'\')">'+article.source+'</button><time> · '+(isVideo(article)?article.duration:'3 slides')+'</time></div>'+
         '<button class="read-article-link" onclick="openArticle(\''+article.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16M4 12h10M4 19h7"/></svg>Voir l\'article</button>'+
       '</div>'+
       '<div class="rail">'+
