@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Declick — Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold:#E8985E; --amber:#E37B42; --teal:#84421F; --navy:#3A2010; --cream:#FFF8F2;
+    --card:#FFE9DA; --card-border:#F0C7A4; --ink:#4A2410; --muted:#8A5B3D;
+    --light-on-dark:#FFEEE0; --muted-on-dark:#E8C2A8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --cream:#241B12; --card:#332616; --card-border:#4A3A22; --ink:#FBEFDD; --muted:#D8C6AC; }
+  }
+  :root[data-theme="dark"]{ --cream:#241B12; --card:#332616; --card-border:#4A3A22; --ink:#FBEFDD; --muted:#D8C6AC; }
+  *{box-sizing:border-box;}
+  body{ margin:0; min-height:100vh; background:var(--navy); font-family:'Nunito Sans',Arial,sans-serif; color:var(--ink);
+    display:flex; align-items:flex-start; justify-content:center; padding:48px 24px 80px; }
+  .stage{display:flex; flex-direction:column; align-items:center; gap:20px;}
+  .stage-title{font-family:'Fredoka',Arial,sans-serif; font-size:20px; color:var(--light-on-dark); font-weight:600;}
+  .phone{ width:380px; height:800px; background:var(--cream); border-radius:44px; border:1px solid #3a3752;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,.6), inset 0 0 0 6px #0f0e16; position:relative; overflow:hidden; }
+  .notch{position:absolute; top:0; left:50%; transform:translateX(-50%); width:120px; height:22px; background:#0f0e16; border-radius:0 0 16px 16px; z-index:60;}
+  .screen{position:absolute; inset:0; display:flex; flex-direction:column;}
+  .statusbar{height:38px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:0 22px; font-size:12px; font-weight:700; color:var(--ink);}
+
+  /* Signup */
+  .flow-screen{flex:1; display:none; flex-direction:column; padding:8px 26px 26px; overflow-y:auto;}
+  .flow-screen.visible{display:flex;}
+  .flow-screen h1{font-family:'Fredoka',Arial,sans-serif; font-size:28px; margin:6px 0 4px; color:var(--ink);}
+  .flow-screen p.sub{font-size:14px; color:var(--muted); margin:0 0 18px; line-height:1.45;}
+  .field-label{font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:14px 0 6px;}
+  .text-input{ width:100%; border:2px solid var(--card-border); background:var(--card); border-radius:14px; padding:13px 14px;
+    font-size:15px; font-family:'Nunito Sans',Arial,sans-serif; color:var(--ink); }
+  .text-input:focus{outline:none; border-color:var(--amber);}
+  .step-dots{display:flex; gap:6px; margin-bottom:16px;}
+  .step-dots span{width:22px; height:5px; border-radius:4px; background:var(--card-border);}
+  .step-dots span.active{background:var(--amber);}
+  .chips{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px;}
+  .chip{ padding:10px 16px; border-radius:20px; border:2px solid var(--card-border); background:var(--card); color:var(--ink);
+    font-size:14px; font-weight:700; cursor:pointer; font-family:'Nunito Sans',Arial,sans-serif; -webkit-tap-highlight-color:transparent; }
+  .chip.active{background:var(--amber); border-color:var(--amber); color:#241B12;}
+  .primary-btn{ margin-top:auto; border:none; border-radius:20px; padding:16px; font-size:16px; font-weight:800;
+    font-family:'Fredoka',Arial,sans-serif; background:var(--amber); color:#241B12; cursor:pointer; }
+  .primary-btn:disabled{background:var(--card-border); color:var(--muted); cursor:not-allowed;}
+  .link-btn{ border:none; background:none; color:var(--muted); font-size:13px; font-weight:700; margin-top:10px; cursor:pointer;
+    font-family:'Nunito Sans',Arial,sans-serif; text-decoration:underline; }
+  .account-btn{ display:flex; align-items:center; gap:12px; width:100%; border:2px solid var(--card-border); background:var(--card);
+    border-radius:16px; padding:10px 14px; cursor:pointer; text-align:left; font-family:'Nunito Sans',Arial,sans-serif; }
+  .account-btn .avatar-mini{ width:34px; height:34px; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center;
+    justify-content:center; font-family:'Fredoka',Arial,sans-serif; font-weight:700; font-size:14px; flex-shrink:0; }
+  .account-btn b{font-size:14px; color:var(--ink);} .account-btn span{font-size:12px; color:var(--muted);}
+  .logout-link{ display:block; text-align:center; border:none; background:none; color:var(--muted); font-size:12px; font-weight:700;
+    text-decoration:underline; cursor:pointer; font-family:'Nunito Sans',Arial,sans-serif; margin:4px auto 12px; }
+  .secondary-btn{ border:2px solid var(--card-border); border-radius:16px; padding:9px 13px; font-size:12px; font-weight:700;
+    font-family:'Nunito Sans',Arial,sans-serif; background:transparent; color:var(--ink); cursor:pointer; }
+
+  .appbar{padding:2px 20px 12px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;}
+  .wordmark{font-family:'Fredoka',Arial,sans-serif; font-size:25px; font-weight:700; color:var(--ink);}
+  .wordmark span{color:var(--amber);}
+  .brain-widget{display:flex; align-items:center; gap:7px; background:var(--card); border:1px solid var(--card-border); border-radius:20px; padding:5px 12px 5px 8px; cursor:pointer;}
+  .brain-widget-icon{width:20px; height:20px;}
+  .brain-widget .streak{font-size:12px; font-weight:800; color:var(--teal);}
+
+  .body-area{flex:1; position:relative; overflow:hidden;}
+  .tabpanel{position:absolute; inset:0; display:none;}
+  .tabpanel.visible{display:block;}
+
+  .reelfeed{height:100%; overflow-y:scroll; scroll-snap-type:y mandatory; scrollbar-width:none;}
+  .reelfeed::-webkit-scrollbar{display:none;}
+  .reel{height:100%; scroll-snap-align:start; position:relative; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden;}
+  .reel .scrim{position:absolute; inset:0; background:linear-gradient(180deg, rgba(58,32,16,.05) 30%, rgba(58,32,16,.92) 100%);}
+  .reel .chip-tag{position:relative; z-index:2; align-self:flex-start; margin:0 18px 8px; font-size:11px; font-weight:800; padding:5px 10px; border-radius:20px; background:rgba(58,32,16,.55); color:#FFEEE0;}
+  .reel .num{position:relative; z-index:2; font-family:'Fredoka',Arial,sans-serif; font-size:40px; font-weight:700; margin:0 18px 0px; color:rgba(255,241,214,.9);}
+  .reel .content{position:relative; z-index:2; padding:0 18px 22px; max-width:270px;}
+  .reel .content h3{font-family:'Fredoka',Arial,sans-serif; font-size:19px; line-height:1.28; margin:0 0 6px; font-weight:600; color:#FFF8F2;}
+  .reel .content .src{display:flex; align-items:center; gap:8px; font-size:12px; color:#FFEEE0; font-weight:700;}
+  .reel .content .src .dot{width:6px; height:6px; border-radius:50%; background:var(--amber);}
+  .reel .content .src time{color:#E8C2A8; font-weight:400;}
+  .rail{position:absolute; right:12px; bottom:56px; z-index:3; display:flex; flex-direction:column; align-items:center; gap:14px;}
+  .rail .railbtn{display:flex; flex-direction:column; align-items:center; gap:3px;}
+  .rail button{background:rgba(58,32,16,.5); border:none; border-radius:50%; width:42px; height:42px; color:#FFEEE0; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;}
+  .rail button svg{width:19px; height:19px;}
+  .rail button.on{background:var(--amber); color:#241B12;}
+  .rail button.reported{background:#8a4a34; color:#FFEEE0;}
+  .rail .count{font-size:10px; font-weight:700; color:#FFEEE0;}
+  .empty-state{height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:40px; text-align:center;}
+  .empty-state p{font-size:15px; color:var(--muted); margin:0;}
+  .end-of-feed{height:100%; scroll-snap-align:start; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:40px; text-align:center; background:var(--cream);}
+  .end-of-feed p{font-size:14px; color:var(--muted); margin:0;}
+
+  /* Comment sheet */
+  .comment-sheet{position:absolute; inset:0; background:rgba(58,32,16,.45); z-index:50; display:none; flex-direction:column; justify-content:flex-end;}
+  .comment-sheet.open{display:flex;}
+  .comment-panel{background:var(--cream); border-radius:24px 24px 0 0; max-height:78%; display:flex; flex-direction:column; padding:16px 18px 18px;}
+  .comment-panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .comment-panel-head h3{font-family:'Fredoka',Arial,sans-serif; font-size:17px; margin:0; color:var(--ink);}
+  .comment-panel-head button{background:none; border:none; font-size:20px; color:var(--muted); cursor:pointer;}
+  .comment-list{overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:12px; padding:4px 0 12px;}
+  .comment-item{display:flex; gap:10px;}
+  .comment-avatar{width:32px; height:32px; border-radius:50%; background:var(--teal); color:#fff; font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:'Fredoka',Arial,sans-serif;}
+  .comment-body b{font-size:13px; color:var(--ink);}
+  .comment-body p{margin:2px 0 0; font-size:13px; color:var(--muted); line-height:1.4;}
+  .comment-input-row{display:flex; gap:8px;}
+  .comment-input-row input{flex:1; border:2px solid var(--card-border); background:var(--card); border-radius:16px; padding:10px 14px; font-size:14px; font-family:'Nunito Sans',Arial,sans-serif; color:var(--ink);}
+  .comment-input-row input:focus{outline:none; border-color:var(--amber);}
+  .comment-input-row button{border:none; background:var(--amber); color:#241B12; border-radius:16px; padding:0 16px; font-weight:800; font-family:'Fredoka',Arial,sans-serif; font-size:13px; cursor:pointer;}
+
+  /* Read article link on reels */
+  .read-article-link{position:relative; z-index:2; display:inline-flex; align-items:center; gap:5px; margin:10px 18px 0; padding:9px 14px; border-radius:16px; background:rgba(255,248,242,.16); border:1.5px solid rgba(255,238,224,.55); color:#FFEEE0; font-size:12px; font-weight:800; font-family:'Nunito Sans',Arial,sans-serif; cursor:pointer; width:max-content;}
+  .read-article-link svg{width:14px; height:14px;}
+
+  /* Generic bottom sheet (report / share / edit profile) */
+  .sheet-overlay{position:absolute; inset:0; background:rgba(58,32,16,.45); z-index:55; display:none; flex-direction:column; justify-content:flex-end;}
+  .sheet-overlay.open{display:flex;}
+  .sheet-panel{background:var(--cream); border-radius:24px 24px 0 0; max-height:82%; display:flex; flex-direction:column; padding:16px 18px 20px; overflow-y:auto;}
+  .sheet-panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+  .sheet-panel-head h3{font-family:'Fredoka',Arial,sans-serif; font-size:17px; margin:0; color:var(--ink);}
+  .sheet-panel-head button{background:none; border:none; font-size:20px; color:var(--muted); cursor:pointer;}
+  .sheet-sub{font-size:13px; color:var(--muted); margin:0 0 14px;}
+
+  .report-option{display:flex; align-items:center; justify-content:space-between; width:100%; border:none; background:none; border-top:1px solid var(--card-border); padding:15px 2px; font-size:14px; font-weight:700; color:var(--ink); cursor:pointer; text-align:left; font-family:'Nunito Sans',Arial,sans-serif;}
+  .report-option:last-child{padding-bottom:4px;}
+  .report-option .radio{width:19px; height:19px; border-radius:50%; border:2px solid var(--card-border); flex-shrink:0;}
+  .report-option.picked .radio{border-color:var(--amber); background:radial-gradient(circle, var(--amber) 0 42%, transparent 44%);}
+
+  .share-row{display:flex; gap:14px; padding:4px 0 18px; overflow-x:auto;}
+  .share-dest{display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0; border:none; background:none; cursor:pointer; font-family:'Nunito Sans',Arial,sans-serif;}
+  .share-dest .ico{width:48px; height:48px; border-radius:50%; background:var(--card); border:1px solid var(--card-border); display:flex; align-items:center; justify-content:center; color:var(--ink);}
+  .share-dest .ico svg{width:21px; height:21px;}
+  .share-dest span{font-size:11px; color:var(--muted); font-weight:700;}
+  .friend-row{display:flex; align-items:center; gap:12px; width:100%; border:none; background:none; border-top:1px solid var(--card-border); padding:12px 2px; cursor:pointer; text-align:left; font-family:'Nunito Sans',Arial,sans-serif;}
+  .friend-avatar{width:36px; height:36px; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',Arial,sans-serif; font-weight:700; font-size:14px; flex-shrink:0;}
+  .friend-row b{font-size:14px; color:var(--ink); flex:1;}
+  .friend-sent{font-size:11px; font-weight:800; color:var(--amber);}
+
+  /* Article overlay */
+  .article-overlay{position:absolute; inset:0; background:var(--cream); z-index:56; display:none; flex-direction:column;}
+  .article-overlay.open{display:flex;}
+  .article-hero{height:180px; flex-shrink:0; position:relative; display:flex; align-items:flex-end; padding:14px 18px;}
+  .article-hero button{position:absolute; top:14px; left:14px; width:34px; height:34px; border-radius:50%; background:rgba(58,32,16,.5); border:none; color:#FFEEE0; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .article-hero .art-tag{position:relative; background:rgba(58,32,16,.5); color:#FFEEE0; font-size:11px; font-weight:800; padding:5px 10px; border-radius:20px;}
+  .article-body{flex:1; overflow-y:auto; padding:18px 22px 28px;}
+  .article-body h1{font-family:'Fredoka',Arial,sans-serif; font-size:21px; line-height:1.3; margin:0 0 8px; color:var(--ink);}
+  .article-body .art-src{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-weight:700; margin-bottom:18px;}
+  .article-body .art-src .dot{width:5px; height:5px; border-radius:50%; background:var(--amber);}
+  .article-body p{font-size:14.5px; line-height:1.7; color:var(--ink); margin:0 0 14px;}
+  .back-to-video{display:block; width:100%; border:none; border-radius:18px; padding:14px; background:var(--card); color:var(--ink); font-weight:800; font-family:'Fredoka',Arial,sans-serif; font-size:14px; cursor:pointer; margin-top:6px;}
+
+  /* Edit profile sheet */
+  .avatar-pick-row{display:flex; gap:10px; margin:4px 0 6px; flex-wrap:wrap;}
+  .avatar-pick{width:40px; height:40px; border-radius:50%; border:3px solid transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',Arial,sans-serif; color:#fff; font-weight:700;}
+  .avatar-pick.picked{border-color:var(--ink);}
+
+  /* Messages tab */
+  .messages-wrap{height:100%; overflow-y:auto; padding:14px 18px 24px; background:var(--cream);}
+  .messages-wrap h2{font-family:'Fredoka',Arial,sans-serif; font-size:20px; margin:4px 2px 14px; color:var(--ink);}
+  .thread{display:flex; align-items:center; gap:12px; padding:12px 6px; border-bottom:1px solid var(--card-border); cursor:pointer;}
+  .thread .friend-avatar{width:44px; height:44px; font-size:16px;}
+  .thread-info{flex:1; min-width:0;}
+  .thread-info b{display:block; font-size:14px; color:var(--ink);}
+  .thread-info p{margin:2px 0 0; font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .thread-time{font-size:11px; color:var(--muted); flex-shrink:0;}
+  .messages-empty{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:60px 30px; text-align:center;}
+  .messages-empty p{font-size:14px; color:var(--muted); margin:0;}
+
+
+  /* ---- Appbar right group + search button ---- */
+  .appbar-right{display:flex; align-items:center; gap:10px;}
+  .search-btn{width:38px; height:38px; border-radius:50%; background:var(--card); border:1px solid var(--card-border); color:var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;}
+  .search-btn svg{width:18px; height:18px;}
+
+  /* ---- Clickable source ---- */
+  .src-link{border:none; background:none; padding:0; color:inherit; font:inherit; font-weight:800; cursor:pointer; text-decoration:underline; text-decoration-color:rgba(255,238,224,.45); text-underline-offset:3px;}
+
+  /* ---- Splash ---- */
+  .splash{position:absolute; inset:0; z-index:300; background:linear-gradient(160deg,#E98B54,#E37B42 55%,#C9662F); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; transition:opacity .5s ease, visibility .5s ease;}
+  .splash.hide{opacity:0; visibility:hidden; pointer-events:none;}
+  .splash-logo{width:150px; height:150px; animation:splashPop .7s cubic-bezier(.2,1.3,.4,1) both;}
+  .splash-word{font-family:'Fredoka',Arial,sans-serif; font-weight:700; font-size:46px; line-height:1; color:#5C2E12; animation:splashRise .6s .25s ease both;}
+  .splash-word span{color:#FFF8F2;}
+  .splash-tag{font-size:14px; font-weight:700; color:#FFEEE0; margin:0; animation:splashRise .6s .4s ease both;}
+  .splash-bar{width:120px; height:5px; border-radius:4px; background:rgba(255,248,242,.3); overflow:hidden; margin-top:18px;}
+  .splash-bar i{display:block; height:100%; width:0; background:#FFF8F2; border-radius:4px; animation:splashLoad 1.7s .1s ease-in-out forwards;}
+  @keyframes splashPop{from{transform:scale(.4); opacity:0;} to{transform:scale(1); opacity:1;}}
+  @keyframes splashRise{from{transform:translateY(14px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+  @keyframes splashLoad{to{width:100%;}}
+
+  /* ---- Full-screen overlays (journal / search / chat) ---- */
+  .page-overlay{position:absolute; inset:0; background:var(--cream); z-index:56; display:none; flex-direction:column;}
+  .page-overlay.open{display:flex;}
+  .page-head{display:flex; align-items:center; gap:10px; padding:44px 16px 10px; flex-shrink:0; border-bottom:1px solid var(--card-border);}
+  .page-head .back-btn{width:36px; height:36px; border-radius:50%; background:var(--card); border:1px solid var(--card-border); color:var(--ink); font-size:16px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0;}
+  .page-head h3{font-family:'Fredoka',Arial,sans-serif; font-size:17px; margin:0; color:var(--ink); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .page-scroll{flex:1; overflow-y:auto; padding:16px 18px 28px;}
+
+  /* Journal page */
+  .journal-top{display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; padding-bottom:14px;}
+  .journal-avatar{width:78px; height:78px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',Arial,sans-serif; font-weight:700; font-size:30px; color:#FFF8F2; margin-bottom:6px; border:3px solid var(--card);}
+  .journal-name{font-family:'Fredoka',Arial,sans-serif; font-size:21px; font-weight:700; color:var(--ink); margin:0;}
+  .journal-handle{font-size:13px; color:var(--muted); margin:0;}
+  .journal-bio{font-size:13.5px; color:var(--ink); line-height:1.5; margin:8px 6px 0;}
+  .journal-stats{display:flex; margin:14px 0; border-top:1px solid var(--card-border); border-bottom:1px solid var(--card-border);}
+  .journal-stats div{flex:1; text-align:center; padding:10px 0; border-left:1px solid var(--card-border);}
+  .journal-stats div:first-child{border-left:none;}
+  .journal-stats b{display:block; font-family:'Fredoka',Arial,sans-serif; font-size:18px; color:var(--ink);}
+  .journal-stats span{font-size:11px; color:var(--muted); font-weight:700;}
+  .follow-btn{border:none; border-radius:18px; padding:11px 26px; font-family:'Fredoka',Arial,sans-serif; font-weight:700; font-size:14px; cursor:pointer; background:var(--amber); color:#241B12; margin-top:8px;}
+  .follow-btn.following{background:var(--card); color:var(--ink); border:2px solid var(--card-border);}
+  .follow-btn.small{padding:7px 14px; font-size:12px; margin-top:0; border-radius:14px;}
+  .j-article{display:flex; gap:12px; align-items:center; padding:10px 0; border-top:1px solid var(--card-border); cursor:pointer; width:100%; background:none; border-left:none; border-right:none; border-bottom:none; text-align:left; font-family:'Nunito Sans',Arial,sans-serif;}
+  .j-article .thumb{width:62px; height:62px; border-radius:12px; flex-shrink:0;}
+  .j-article b{font-size:13.5px; line-height:1.35; color:var(--ink); display:block;}
+  .j-article small{font-size:11px; color:var(--muted); font-weight:700;}
+  .section-label{font-size:11px; font-weight:800; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; margin:6px 0 8px;}
+
+  /* Search */
+  .search-input-wrap{flex:1; display:flex; align-items:center; gap:8px; background:var(--card); border:2px solid var(--card-border); border-radius:18px; padding:0 12px;}
+  .search-input-wrap:focus-within{border-color:var(--amber);}
+  .search-input-wrap svg{width:16px; height:16px; color:var(--muted); flex-shrink:0;}
+  .search-input-wrap input{flex:1; border:none; background:none; outline:none; padding:10px 0; font-size:14.5px; font-family:'Nunito Sans',Arial,sans-serif; color:var(--ink); min-width:0;}
+  .journal-row{display:flex; align-items:center; gap:12px; padding:10px 2px; border-top:1px solid var(--card-border); cursor:pointer;}
+  .journal-row .j-av{width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#FFF8F2; font-family:'Fredoka',Arial,sans-serif; font-weight:700; font-size:17px; flex-shrink:0;}
+  .journal-row .j-info{flex:1; min-width:0;}
+  .journal-row .j-info b{display:block; font-size:14px; color:var(--ink);}
+  .journal-row .j-info span{font-size:12px; color:var(--muted);}
+  .no-result{font-size:14px; color:var(--muted); padding:24px 4px; text-align:center;}
+
+  /* Article extras */
+  .article-body h2{font-family:'Fredoka',Arial,sans-serif; font-size:16.5px; margin:20px 0 8px; color:var(--ink);}
+  .keypoints{background:var(--card); border:1px solid var(--card-border); border-radius:16px; padding:14px 16px; margin:18px 0;}
+  .keypoints b{font-family:'Fredoka',Arial,sans-serif; font-size:14px; color:var(--ink);}
+  .keypoints ul{margin:8px 0 0; padding-left:18px;}
+  .keypoints li{font-size:13.5px; line-height:1.55; color:var(--ink); margin-bottom:4px;}
+  .art-disclaimer{font-size:11.5px; color:var(--muted); font-style:italic; margin:6px 0 14px;}
+
+  /* Brand share icons */
+  .share-dest .ico.brand{border:none; color:#fff;}
+  .share-dest .ico.brand svg{width:24px; height:24px;}
+
+  /* Messages */
+  .messages-head{display:flex; align-items:center; justify-content:space-between; margin:4px 2px 12px;}
+  .messages-head h2{margin:0;}
+  .compose-btn{width:38px; height:38px; border-radius:50%; background:var(--amber); color:#241B12; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;}
+  .compose-btn svg{width:18px; height:18px;}
+  .thread-info p.unread{color:var(--ink); font-weight:800;}
+
+  /* Chat */
+  .chat-msgs{flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:8px; background:var(--cream);}
+  .bubble{max-width:78%; padding:9px 13px; border-radius:18px; font-size:14px; line-height:1.4; word-wrap:break-word;}
+  .bubble.them{align-self:flex-start; background:var(--card); border:1px solid var(--card-border); color:var(--ink); border-bottom-left-radius:6px;}
+  .bubble.me{align-self:flex-end; background:var(--amber); color:#241B12; border-bottom-right-radius:6px;}
+  .bubble-time{font-size:10.5px; color:var(--muted); align-self:center; margin:4px 0;}
+  .share-card{align-self:flex-end; width:210px; border-radius:16px; overflow:hidden; border:1px solid var(--card-border); background:var(--card); cursor:pointer; text-align:left; padding:0; font-family:'Nunito Sans',Arial,sans-serif;}
+  .share-card.them{align-self:flex-start;}
+  .share-card .sc-img{height:70px;}
+  .share-card .sc-body{padding:9px 11px;}
+  .share-card b{font-size:12.5px; line-height:1.35; color:var(--ink); display:block;}
+  .share-card small{font-size:11px; color:var(--muted); font-weight:700;}
+  .chat-input-row{display:flex; gap:8px; padding:10px 14px 22px; border-top:1px solid var(--card-border); background:var(--cream); flex-shrink:0;}
+  .chat-input-row input{flex:1; border:2px solid var(--card-border); background:var(--card); border-radius:20px; padding:10px 14px; font-size:14px; font-family:'Nunito Sans',Arial,sans-serif; color:var(--ink); outline:none; min-width:0;}
+  .chat-input-row input:focus{border-color:var(--amber);}
+  .chat-input-row button{border:none; background:var(--amber); color:#241B12; border-radius:20px; padding:0 18px; font-weight:800; font-family:'Fredoka',Arial,sans-serif; font-size:13px; cursor:pointer;}
+  .chat-empty{margin:auto; text-align:center; font-size:13.5px; color:var(--muted); padding:20px;}
+
+  /* Profile library counts + following link */
+  .following-link{border:none; background:none; font-family:'Nunito Sans',Arial,sans-serif; font-size:13px; color:var(--ink); cursor:pointer; margin-bottom:14px; padding:0;}
+  .following-link b{font-family:'Fredoka',Arial,sans-serif; font-size:15px;}
+
+  /* ---- Account type + journal signup ---- */
+  .type-card{display:flex; align-items:center; gap:14px; width:100%; text-align:left; border:2px solid var(--card-border); background:var(--card); border-radius:20px; padding:16px; margin-bottom:14px; cursor:pointer; font-family:'Nunito Sans',Arial,sans-serif; position:relative;}
+  .type-card:hover{border-color:var(--amber);}
+  .type-ico{width:48px; height:48px; border-radius:50%; background:var(--amber); color:#241B12; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .type-ico.dark{background:var(--teal); color:#FFF8F2;}
+  .type-ico svg{width:24px; height:24px;}
+  .type-txt b{display:block; font-family:'Fredoka',Arial,sans-serif; font-size:17px; color:var(--ink); margin-bottom:3px;}
+  .type-txt span{font-size:12.5px; color:var(--muted); line-height:1.4; display:block;}
+  .type-tag{display:inline-block; margin-top:7px; font-style:normal; font-size:10.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--teal); background:var(--cream); border:1px solid var(--card-border); border-radius:10px; padding:3px 8px;}
+  textarea.text-input{resize:none; min-height:84px; font-family:'Nunito Sans',Arial,sans-serif;}
+  .file-pick{display:flex; align-items:center; gap:10px; width:100%; border:2px dashed var(--card-border); background:var(--card); border-radius:16px; padding:14px; cursor:pointer; color:var(--ink); font-family:'Nunito Sans',Arial,sans-serif; font-size:13.5px; font-weight:700; text-align:left;}
+  .file-pick svg{width:22px; height:22px; flex-shrink:0; color:var(--amber);}
+  .file-pick.has-file{border-style:solid; border-color:var(--amber);}
+  .check-row{display:flex; gap:10px; align-items:flex-start; margin:16px 0 4px; font-size:12.5px; color:var(--muted); line-height:1.45; cursor:pointer;}
+  .check-row input{margin-top:2px; accent-color:var(--amber); width:17px; height:17px; flex-shrink:0;}
+  .profile-badge{display:inline-block; font-size:11px; font-weight:800; color:var(--teal); background:var(--cream); border:1px solid var(--card-border); border-radius:12px; padding:3px 10px; margin:0 0 8px;}
+  .profile-badge.ok{color:#2E7D4F; border-color:#9CCFB0;}
+
+  /* ---- Publish tab (journal accounts) ---- */
+  .publish-wrap{height:100%; overflow-y:auto; padding:16px 20px 24px; background:var(--cream);}
+  .publish-wrap h2{font-family:'Fredoka',Arial,sans-serif; font-size:20px; margin:4px 2px 12px; color:var(--ink);}
+  .steps{list-style:none; margin:0 0 14px; padding:0;}
+  .steps li{display:flex; gap:12px; align-items:flex-start; padding:10px 0; font-size:13.5px; color:var(--muted); line-height:1.4;}
+  .steps li .num{width:24px; height:24px; border-radius:50%; background:var(--card-border); color:var(--ink); font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .steps li.done{color:var(--ink);} .steps li.done .num{background:var(--amber);}
+  .steps li.now{color:var(--ink); font-weight:700;} .steps li.now .num{background:var(--teal); color:#FFF8F2;}
+  .my-pub{display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--card-border);}
+  .my-pub .thumb{width:54px; height:54px; border-radius:12px; flex-shrink:0;}
+  .my-pub .info{flex:1; min-width:0;}
+  .my-pub b{font-size:13.5px; color:var(--ink); display:block; line-height:1.3;}
+  .my-pub small{font-size:11px; color:var(--muted); font-weight:700;}
+  .my-pub button{border:none; background:none; color:var(--muted); text-decoration:underline; font-size:11.5px; cursor:pointer; font-weight:700; font-family:'Nunito Sans',Arial,sans-serif;}
+  select.text-input{appearance:auto;}
+
+  /* Toast */
+  .toast{position:absolute; bottom:100px; left:50%; transform:translateX(-50%) translateY(10px); background:var(--ink); color:var(--cream); font-size:13px; font-weight:700; padding:10px 18px; border-radius:16px; z-index:9999; opacity:0; transition:opacity .25s ease, transform .25s ease; pointer-events:none;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* Profile */
+  .profile-wrap{height:100%; overflow-y:auto; padding:16px 20px 24px; background:var(--cream);}
+  .p-card{background:var(--card); border:1px solid var(--card-border); border-radius:22px; padding:20px; margin-bottom:16px;}
+  .p-eyebrow{font-size:11px; font-weight:800; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; margin:0 0 12px;}
+
+  .p-card.identity{position:relative;}
+  .edit-pencil-btn{position:absolute; top:16px; right:16px; width:32px; height:32px; border-radius:50%; background:var(--cream); border:1px solid var(--card-border); color:var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .edit-pencil-btn svg{width:15px; height:15px;}
+  .profile-top{display:flex; flex-direction:column; align-items:center; gap:2px;}
+  .avatar-ring{width:76px; height:76px; border-radius:50%; background:linear-gradient(135deg, var(--amber), var(--teal)); display:flex; align-items:center; justify-content:center; padding:3px; margin-bottom:8px;}
+  .avatar-circle{width:100%; height:100%; border-radius:50%; background:var(--cream); color:var(--ink); display:flex; align-items:center; justify-content:center; font-family:'Fredoka',Arial,sans-serif; font-size:24px; font-weight:700;}
+  .profile-name{margin:4px 0 0; font-family:'Fredoka',Arial,sans-serif; font-size:21px; font-weight:700; color:var(--ink);}
+  .profile-handle{font-size:13px; color:var(--muted); margin:2px 0 16px;}
+  .p-divider{height:1px; background:var(--card-border); margin:0 0 14px;}
+  .stats-row{display:flex; justify-content:space-between;}
+  .stat{flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; border-left:1px solid var(--card-border);}
+  .stat:first-child{border-left:none;}
+  .stat b{font-family:'Fredoka',Arial,sans-serif; font-size:20px; color:var(--ink);}
+  .stat span{font-size:11px; color:var(--muted); font-weight:700;}
+
+  .scene-card{position:relative; height:180px; border-radius:18px; overflow:hidden; border:1px solid var(--card-border); margin-bottom:10px;}
+  .scene-backdrop{position:absolute; inset:0;}
+  .brain-wrap{position:absolute; left:50%; top:62%; width:140px; height:140px; transform:translate(-50%,-50%) scale(1); transition:transform .5s ease;}
+  .stage-label{text-align:center; font-size:13px; font-weight:700; color:var(--ink); margin:0 0 8px;}
+  .stage-dots{display:flex; justify-content:center; gap:5px; margin-bottom:14px;}
+  .stage-dots span{width:16px; height:6px; border-radius:4px; background:var(--card-border);}
+  .stage-dots span.on{background:var(--amber);}
+  .demo-row{display:flex; gap:16px; justify-content:center; border-top:1px solid var(--card-border); padding-top:12px;}
+  .demo-link{border:none; background:none; color:var(--muted); font-size:11px; font-weight:700; cursor:pointer; font-family:'Nunito Sans',Arial,sans-serif; text-decoration:underline; padding:0;}
+
+  .interest-summary{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;}
+  .pill-static{font-size:12px; font-weight:700; background:var(--cream); border:1px solid var(--card-border); color:var(--ink); padding:5px 10px; border-radius:14px;}
+  .edit-interests-panel{display:none; flex-direction:column; gap:10px; background:var(--cream); border:1px solid var(--card-border); border-radius:16px; padding:16px; margin-top:12px;}
+  .edit-interests-panel.open{display:flex;}
+
+  .content-tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .content-tab{flex:1; text-align:center; padding:9px 0; border-radius:14px; border:2px solid var(--card-border); background:var(--cream); color:var(--muted); font-size:12px; font-weight:800; font-family:'Nunito Sans',Arial,sans-serif; cursor:pointer;}
+  .content-tab.active{background:var(--ink); border-color:var(--ink); color:var(--cream);}
+  .content-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;}
+  .grid-tile{aspect-ratio:1; border-radius:10px; position:relative; overflow:hidden; display:flex; align-items:flex-end;}
+  .grid-tile span{position:relative; z-index:1; font-size:10px; color:#FFF8F2; font-weight:700; padding:6px; line-height:1.2;}
+  .grid-tile .tile-scrim{position:absolute; inset:0; background:linear-gradient(180deg, rgba(58,32,16,0) 40%, rgba(58,32,16,.85) 100%);}
+  .empty-mini{font-size:13px; color:var(--muted); padding:8px 0 4px; grid-column:1 / -1;}
+
+  .tabbar{display:flex; border-top:1px solid var(--card-border); background:var(--cream); padding:8px 10px 20px; flex-shrink:0;}
+  .tabbtn{flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; color:var(--muted); font-family:'Nunito Sans',Arial,sans-serif; font-size:11px; font-weight:700; cursor:pointer; padding:4px 0;}
+  .tabbtn svg{width:21px; height:21px;}
+  .tabbtn.active{color:var(--ink);}
+  .tabbtn.active svg{stroke:var(--amber);}
+
+  /* Plein écran sur téléphone : plus de maquette de téléphone */
+  @media (max-width: 600px){
+    html,body{height:100%; overflow:hidden;}
+    body{padding:0; min-height:0; height:100dvh; display:block; background:var(--cream);}
+    .stage{display:block; gap:0; height:100dvh;}
+    .stage-title,.notch,.statusbar{display:none;}
+    .phone{width:100vw; height:100dvh; border-radius:0; border:none; box-shadow:none;}
+    .screen{padding-top:env(safe-area-inset-top);}
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <p class="stage-title">declick — prototype</p>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●●●&nbsp;&nbsp;100%</span></div>
+
+      <div class="flow-screen" id="loginScreen">
+        <h1>Bon retour</h1>
+        <p class="sub">Choisis ton compte pour te reconnecter.</p>
+        <div id="accountList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;"></div>
+        <button class="primary-btn" style="margin-top:auto" onclick="startNewAccount()">Créer un nouveau compte</button>
+      </div>
+
+      <div class="flow-screen" id="signupType">
+        <h1>Bienvenue sur Declick</h1>
+        <p class="sub">Choisis le type de compte que tu veux créer.</p>
+        <button class="type-card" onclick="chooseType('user')">
+          <span class="type-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
+          <span class="type-txt"><b>Utilisateur</b><span>Je m'informe avec des vidéos courtes sur mes centres d'intérêt.</span></span>
+        </button>
+        <button class="type-card" onclick="chooseType('journal')">
+          <span class="type-ico dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11v16H7a2 2 0 0 1-2-2Z"/><path d="M16 8h3v10a2 2 0 0 1-2 2"/><path d="M8.500 8h4M8.500 12h4M8.500 16h2"/></svg></span>
+          <span class="type-txt"><b>Journal / média</b><span>Je publie des vidéos et des articles sur Declick.</span><em class="type-tag">Justificatif requis</em></span>
+        </button>
+        <button class="link-btn" id="haveAccountBtn" style="margin-top:auto" onclick="backToLogin()">J'ai déjà un compte</button>
+      </div>
+
+      <div class="flow-screen" id="signupJ1">
+        <div class="step-dots"><span class="active"></span><span></span></div>
+        <h1>Compte journal</h1>
+        <p class="sub">Présente ton média. Il sera visible par tous les utilisateurs une fois vérifié.</p>
+        <p class="field-label">Nom du média</p>
+        <input class="text-input" id="jName" placeholder="Ex. La Gazette" oninput="onJ1Input()">
+        <p class="field-label">Pseudo</p>
+        <input class="text-input" id="jHandle" placeholder="@lagazette">
+        <p class="field-label">Adresse mail professionnelle</p>
+        <input class="text-input" id="jEmail" type="email" placeholder="redaction@media.fr" oninput="onJ1Input()">
+        <p class="field-label">Description</p>
+        <textarea class="text-input" id="jBio" placeholder="Ligne éditoriale, thèmes couverts..."></textarea>
+        <button class="primary-btn" id="j1Btn" style="margin-top:18px" disabled onclick="goToJ2()">Continuer</button>
+        <button class="link-btn" onclick="backToType()">Retour</button>
+      </div>
+
+      <div class="flow-screen" id="signupJ2">
+        <div class="step-dots"><span></span><span class="active"></span></div>
+        <h1>Justificatif</h1>
+        <p class="sub">Pour publier des vidéos, nous vérifions que ton média existe : carte de presse, Kbis, attestation du rédacteur en chef ou toute pièce équivalente (PDF, JPG ou PNG).</p>
+        <input type="file" id="jProof" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/*" hidden onchange="onJ2Input()">
+        <button class="file-pick" id="jProofBtn" type="button" onclick="document.getElementById('jProof').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+          <span id="jProofName">Ajouter un justificatif</span>
+        </button>
+        <label class="check-row"><input type="checkbox" id="jCertify" onchange="onJ2Input()"><span>Je certifie être habilité(e) à représenter ce média et que les informations fournies sont exactes.</span></label>
+        <button class="primary-btn" id="j2Btn" style="margin-top:18px" disabled onclick="submitJournal()">Envoyer ma demande</button>
+        <button class="link-btn" onclick="backToJ1()">Retour</button>
+      </div>
+
+      <div class="flow-screen" id="signup1">
+        <div class="step-dots"><span class="active"></span><span></span></div>
+        <h1>Crée ton compte</h1>
+        <p class="sub">Quelques infos pour démarrer. Tu ne verras cet écran qu'une seule fois.</p>
+        <p class="field-label">Prénom</p>
+        <input class="text-input" id="inputName" placeholder="Ton prénom" oninput="onSignup1Input()">
+        <p class="field-label">Pseudo</p>
+        <input class="text-input" id="inputHandle" placeholder="@pseudo">
+        <button class="primary-btn" id="signup1Btn" disabled onclick="goToSignup2()">Continuer</button>
+        <button class="link-btn" onclick="backToType()">Retour</button>
+      </div>
+
+      <div class="flow-screen" id="signup2">
+        <div class="step-dots"><span></span><span class="active"></span></div>
+        <h1>Tes centres d'intérêt</h1>
+        <p class="sub">Choisis les sujets qui t'intéressent. Ton feed « Pour toi » s'en servira pour te proposer du contenu.</p>
+        <div class="chips" id="chipListSignup"></div>
+        <button class="primary-btn" id="signup2Btn" disabled onclick="finishSignup()">Créer mon compte</button>
+        <button class="link-btn" onclick="backToSignup1()">Retour</button>
+      </div>
+
+      <div id="mainApp" style="display:none; flex:1; flex-direction:column; min-height:0;">
+        <div class="appbar">
+          <div class="wordmark">De<span>click</span></div>
+          <div class="appbar-right">
+            <button class="search-btn" onclick="openSearch()" aria-label="Rechercher">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+            </button>
+          <div class="brain-widget" onclick="showTab('profil')">
+            <svg class="brain-widget-icon" viewBox="0 0 24 24" fill="none" stroke="#84421F" stroke-width="1.6"><path d="M9 3.5c-2 0-3.5 1.4-3.7 3.2C3.6 7.1 3 8.5 3 10c0 1.3.6 2.4 1.5 3.1-.3.6-.5 1.3-.5 2 0 2.3 2 3.9 4.3 3.7.6 1.1 1.8 1.7 3.2 1.7h.5c1.5 0 2.8-.7 3.4-1.9 2.1.1 3.9-1.5 3.9-3.6 0-.7-.2-1.4-.5-2 .9-.7 1.5-1.8 1.5-3 0-1.5-.8-2.8-2-3.4C18.4 5 17 3.6 15 3.6c-1 0-1.9.4-2.6 1-.7-.7-1.7-1.1-2.8-1.1-.2 0-.4 0-.6.05Z"/></svg>
+            <span class="streak" id="streakMini">1j</span>
+          </div>
+          </div>
+        </div>
+
+        <div class="body-area">
+          <div class="tabpanel visible" id="panel-toi"><div class="reelfeed" id="foryouFeed"></div></div>
+          <div class="tabpanel" id="panel-actu"><div class="reelfeed" id="actuFeed"></div></div>
+          <div class="tabpanel" id="panel-messages"><div class="messages-wrap" id="messagesWrap"></div></div>
+          <div class="tabpanel" id="panel-publish">
+            <div class="publish-wrap">
+              <h2>Publier</h2>
+              <div id="publishPending">
+                <div class="p-card">
+                  <p class="p-eyebrow">Vérification de ton média</p>
+                  <ul class="steps">
+                    <li class="done"><span class="num">1</span><span>Demande envoyée</span></li>
+                    <li class="now"><span class="num">2</span><span>Justificatif en cours d'examen (sous 24 à 48 h). <span id="proofFileLabel" style="display:block;font-size:12px;color:var(--muted);font-weight:400;margin-top:2px"></span></span></li>
+                    <li><span class="num">3</span><span>Publication de vidéos activée</span></li>
+                  </ul>
+                  <button class="demo-link" onclick="verifyJournal()">Démo : simuler la validation du compte</button>
+                </div>
+              </div>
+              <div id="publishForm" style="display:none">
+                <div class="p-card">
+                  <p class="p-eyebrow">Nouvelle publication</p>
+                  <p class="field-label" style="margin-top:0">Titre</p>
+                  <input class="text-input" id="pubTitle" placeholder="Titre de la vidéo" oninput="onPubInput()">
+                  <p class="field-label">Thème</p>
+                  <select class="text-input" id="pubTopic"></select>
+                  <p class="field-label">Vidéo</p>
+                  <input type="file" id="pubFile" accept="video/*" hidden onchange="onPubInput()">
+                  <button class="file-pick" id="pubFileBtn" type="button" onclick="document.getElementById('pubFile').click()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>
+                    <span id="pubFileName">Choisir une vidéo</span>
+                  </button>
+                  <p class="field-label">Version écrite (« Voir l'article »)</p>
+                  <textarea class="text-input" id="pubBody" placeholder="Texte de l'article associé à la vidéo..."></textarea>
+                  <button class="primary-btn" id="pubBtn" style="margin-top:16px;width:100%" disabled onclick="publishVideo()">Publier</button>
+                </div>
+                <div class="p-card">
+                  <p class="p-eyebrow">Mes publications</p>
+                  <div id="myPubs"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tabpanel" id="panel-profil">
+            <div class="profile-wrap">
+
+              <div class="p-card identity">
+                <button class="edit-pencil-btn" onclick="openEditProfile()" aria-label="Modifier le profil">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="M13.5 7.5l3 3"/></svg>
+                </button>
+                <div class="profile-top">
+                  <div class="avatar-ring"><div class="avatar-circle" id="avatarInitial" style="background:var(--card);">?</div></div>
+                  <p class="profile-name" id="profileName">Toi</p>
+                  <p class="profile-handle" id="profileHandle" style="margin-bottom:8px">@toi</p>
+                  <span class="profile-badge" id="profileBadge" style="display:none"></span>
+                  <button class="following-link" onclick="openFollowing()"><b id="statFollowing">0</b> abonnements</button>
+                </div>
+                <div class="p-divider"></div>
+                <div class="stats-row" id="statsUser">
+                  <div class="stat"><b id="statLevel">1</b><span>Niveau</span></div>
+                  <div class="stat"><b id="statStreak">1</b><span>Jours</span></div>
+                </div>
+                <div class="stats-row" id="statsJournal" style="display:none">
+                  <div class="stat"><b id="statContents">0</b><span>Contenus</span></div>
+                  <div class="stat"><b id="statFollowers">0</b><span>Abonnés</span></div>
+                </div>
+              </div>
+
+              <div class="p-card">
+                <div class="content-tabs">
+                  <button class="content-tab active" data-list="saved" onclick="showContentList('saved')">Enregistrés <span id="cntSaved">0</span></button>
+                  <button class="content-tab" data-list="liked" onclick="showContentList('liked')">J'aime <span id="cntLiked">0</span></button>
+                </div>
+                <div class="content-grid" id="contentGrid"></div>
+              </div>
+
+              <div class="p-card" id="cardProgress">
+                <p class="p-eyebrow">Ta progression</p>
+                <div class="scene-card">
+                  <div class="scene-backdrop" id="sceneBackdrop"></div>
+                  <div class="brain-wrap" id="brainWrap"></div>
+                </div>
+                <p class="stage-label" id="stageLabel">Ton cerveau tient dans ta chambre.</p>
+                <div class="stage-dots" id="stageDots"></div>
+                <div class="demo-row">
+                  <button class="demo-link" onclick="simulateDay(true)">Démo : +1 jour connecté</button>
+                  <button class="demo-link" onclick="simulateDay(false)">Démo : jour manqué</button>
+                </div>
+              </div>
+
+              <div class="p-card" id="cardInterests">
+                <p class="p-eyebrow">Centres d'intérêt</p>
+                <div class="interest-summary" id="interestSummary"></div>
+              </div>
+
+              <button class="logout-link" onclick="logout()">Se déconnecter</button>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <button class="tabbtn active" data-tab="toi" onclick="showTab('toi')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+            Pour toi
+          </button>
+          <button class="tabbtn" data-tab="actu" onclick="showTab('actu')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16M4 12h16M4 19h9"/></svg>
+            Actualité
+          </button>
+          <button class="tabbtn" data-tab="messages" onclick="showTab('messages')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 11.5c0 4.14-4.03 7.5-9 7.5-1 0-1.96-.13-2.85-.38L4 20l1.1-3.3C4.4 15.5 4 13.6 4 11.5 4 7.36 8.03 4 13 4s8 3.36 8 7.5Z"/></svg>
+            Messages
+          </button>
+          <button class="tabbtn" data-tab="publish" id="tabPublish" style="display:none" onclick="showTab('publish')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+            Publier
+          </button>
+          <button class="tabbtn" data-tab="profil" onclick="showTab('profil')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+            Profil
+          </button>
+        </div>
+      </div>
+
+      <div class="comment-sheet" id="commentSheet">
+        <div class="comment-panel">
+          <div class="comment-panel-head"><h3>Commentaires</h3><button onclick="closeComments()">✕</button></div>
+          <div class="comment-list" id="commentList"></div>
+          <div class="comment-input-row">
+            <input id="commentInput" placeholder="Ajouter un commentaire...">
+            <button onclick="postComment()">Publier</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-overlay" id="reportSheet">
+        <div class="sheet-panel">
+          <div class="sheet-panel-head"><h3>Signaler ce contenu</h3><button onclick="closeReportSheet()">✕</button></div>
+          <p class="sheet-sub">Pourquoi signales-tu ce contenu ?</p>
+          <div id="reportOptions"></div>
+          <button class="primary-btn" style="margin-top:14px" id="reportSubmitBtn" disabled onclick="submitReport()">Envoyer le signalement</button>
+        </div>
+      </div>
+
+      <div class="sheet-overlay" id="shareSheet">
+        <div class="sheet-panel">
+          <div class="sheet-panel-head"><h3>Partager</h3><button onclick="closeShareSheet()">✕</button></div>
+          <div class="share-row">
+            <button class="share-dest" onclick="copyShareLink()">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12a4 4 0 0 0 5.7.3l2-2a4 4 0 0 0-5.6-5.7l-1 1"/><path d="M15 12a4 4 0 0 0-5.7-.3l-2 2a4 4 0 0 0 5.6 5.7l1-1"/></svg></span>
+              <span>Copier le lien</span>
+            </button>
+            <button class="share-dest" onclick="shareVia('WhatsApp')">
+              <span class="ico brand" style="background:#25D366"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.3-4.2A8 8 0 1 1 8.4 18.8Z"/><path d="M9.2 8.8c.3 2.6 2.4 4.7 5 5l1.1-1.2-1.9-1-.8.7a3.6 3.6 0 0 1-1.6-1.6l.7-.8-1-1.9Z" fill="#fff" stroke="none"/></svg></span>
+              <span>WhatsApp</span>
+            </button>
+            <button class="share-dest" onclick="shareVia('Instagram')">
+              <span class="ico brand" style="background:linear-gradient(45deg,#F9A03F,#E1306C 55%,#833AB4)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.8" cy="7.2" r=".6" fill="#fff"/></svg></span>
+              <span>Instagram</span>
+            </button>
+            <button class="share-dest" onclick="shareVia('Messenger')">
+              <span class="ico brand" style="background:#0A7CFF"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c-4.7 0-8.5 3.4-8.5 7.7 0 2.4 1.2 4.5 3.1 5.9V20l2.8-1.5c.8.2 1.7.3 2.6.3 4.7 0 8.5-3.4 8.5-7.6S16.700 3.500 12 3.500Z"/><path d="M7.5 13.500l3.200-3.400 2.300 2 3.500-2.200-3.400 3.600-2.300-2Z" fill="#fff" stroke="none"/></svg></span>
+              <span>Messenger</span>
+            </button>
+            <button class="share-dest" onclick="shareVia('Telegram')">
+              <span class="ico brand" style="background:#29A9EB"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.500 4.500 3.500 11.200l5.200 1.800 1.800 5.500 2.800-3.200 4.300 3.100Z"/><path d="M8.700 13l8.300-5.800"/></svg></span>
+              <span>Telegram</span>
+            </button>
+            <button class="share-dest" onclick="shareVia('X')">
+              <span class="ico brand" style="background:#111111"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l14 14M19 5L5 19"/></svg></span>
+              <span>X</span>
+            </button>
+            <button class="share-dest" onclick="shareVia('Mail')">
+              <span class="ico brand" style="background:#84421F"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.500" y="5.500" width="17" height="13" rx="2.500"/><path d="M4 7.500l8 6 8-6"/></svg></span>
+              <span>Mail</span>
+            </button>
+            <button class="share-dest" onclick="shareVia('SMS')">
+              <span class="ico brand" style="background:#34C759"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4Z"/></svg></span>
+              <span>SMS</span>
+            </button>
+          </div>
+          <p class="sheet-sub" style="margin-bottom:0">Envoyer à un ami sur Declick</p>
+          <div id="friendList"></div>
+        </div>
+      </div>
+
+      <div class="sheet-overlay" id="editProfileSheet">
+        <div class="sheet-panel">
+          <div class="sheet-panel-head"><h3>Modifier le profil</h3><button onclick="closeEditProfile()">✕</button></div>
+          <p class="field-label" style="margin-top:4px">Photo de profil</p>
+          <div class="avatar-pick-row" id="avatarPickRow"></div>
+          <p class="field-label" id="editNameLabel">Prénom</p>
+          <input class="text-input" id="editName" placeholder="Ton prénom">
+          <p class="field-label">Pseudo</p>
+          <input class="text-input" id="editHandle" placeholder="@pseudo">
+          <p class="field-label">Adresse mail</p>
+          <input class="text-input" id="editEmail" placeholder="toi@exemple.com">
+          <div id="editInterestsWrap">
+            <p class="field-label">Centres d'intérêt</p>
+            <div class="chips" id="chipListEdit"></div>
+          </div>
+          <button class="primary-btn" style="margin-top:16px" onclick="saveEditProfile()">Enregistrer</button>
+        </div>
+      </div>
+
+      <div class="article-overlay" id="articleOverlay">
+        <div class="article-hero" id="articleHero">
+          <button onclick="closeArticle()">←</button>
+          <span class="art-tag" id="articleTag"></span>
+        </div>
+        <div class="article-body">
+          <h1 id="articleTitle"></h1>
+          <div class="art-src"><span class="dot"></span><button class="src-link" id="articleSrc" style="color:var(--ink);text-decoration-color:var(--card-border)" onclick="openJournalOfArticle()"></button><span>&nbsp;·&nbsp;<span id="articleDuration"></span> de lecture</span></div>
+          <div id="articleParagraphs"></div>
+          <button class="back-to-video" onclick="closeArticle()">← Retour à la vidéo</button>
+        </div>
+      </div>
+
+      <div class="page-overlay" id="searchOverlay">
+        <div class="page-head">
+          <button class="back-btn" onclick="closeSearch()">←</button>
+          <div class="search-input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+            <input id="searchInput" placeholder="Rechercher un journal ou un sujet" oninput="renderSearch()" autocomplete="off">
+          </div>
+        </div>
+        <div class="page-scroll" id="searchResults"></div>
+      </div>
+
+      <div class="page-overlay" id="journalOverlay">
+        <div class="page-head">
+          <button class="back-btn" onclick="closeJournal()">←</button>
+          <h3 id="journalHeadTitle"></h3>
+        </div>
+        <div class="page-scroll" id="journalContent"></div>
+      </div>
+
+      <div class="page-overlay" id="chatOverlay">
+        <div class="page-head">
+          <button class="back-btn" onclick="closeChat()">←</button>
+          <span class="friend-avatar" id="chatAvatar"></span>
+          <h3 id="chatName"></h3>
+        </div>
+        <div class="chat-msgs" id="chatMsgs"></div>
+        <div class="chat-input-row">
+          <input id="chatInput" placeholder="Écrire un message..." onkeydown="if(event.key==='Enter')sendChatMessage()" autocomplete="off">
+          <button onclick="sendChatMessage()">Envoyer</button>
+        </div>
+      </div>
+
+      <div class="sheet-overlay" id="newMsgSheet">
+        <div class="sheet-panel">
+          <div class="sheet-panel-head"><h3>Nouveau message</h3><button onclick="closeNewMessage()">✕</button></div>
+          <input class="text-input" id="newMsgFilter" placeholder="À : chercher un ami" oninput="renderNewMessageList()" autocomplete="off" style="margin-bottom:8px">
+          <div id="newMsgList"></div>
+        </div>
+      </div>
+
+      <div class="sheet-overlay" id="followingSheet">
+        <div class="sheet-panel">
+          <div class="sheet-panel-head"><h3>Abonnements</h3><button onclick="closeFollowing()">✕</button></div>
+          <div id="followingList"></div>
+        </div>
+      </div>
+
+      <div class="splash" id="splash">
+        <svg class="splash-logo" viewBox="0 0 120 120">
+          <defs><linearGradient id="spG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F9D8C0"/><stop offset=".55" stop-color="#EDAF88"/><stop offset="1" stop-color="#D9692F"/></linearGradient></defs>
+          <g transform="translate(8 8) scale(4.2)">
+            <path d="M9 3.5c-2 0-3.5 1.4-3.7 3.2C3.6 7.1 3 8.5 3 10c0 1.3.6 2.4 1.5 3.1-.3.6-.5 1.3-.5 2 0 2.3 2 3.9 4.3 3.7.6 1.1 1.8 1.7 3.2 1.7h.5c1.5 0 2.8-.7 3.4-1.9 2.1.1 3.9-1.5 3.9-3.6 0-.7-.2-1.4-.5-2 .9-.7 1.5-1.8 1.5-3 0-1.5-.8-2.8-2-3.4C18.4 5 17 3.6 15 3.6c-1 0-1.9.4-2.6 1-.7-.7-1.7-1.1-2.8-1.1-.2 0-.4 0-.6.05Z" fill="url(#spG)" stroke="#FFF8F2" stroke-width=".8" stroke-linejoin="round"/>
+            <path d="M8 8c1-.9 2.200-.8 2.800.2M13.500 7.500c1-.5 2.100 0 2.400 1M7 12.500c1.100.6 2.300.3 3-.6M13 11.500c1-.4 2.200 0 2.600 1M10 15.500c.9.5 2 .4 2.700-.3M12 4.500v4" fill="none" stroke="#84421F" stroke-width=".55" stroke-linecap="round" opacity=".45"/>
+          </g>
+          <path d="M70 64v36l9.500-8.500 6 13 7-3-6-12.500H99Z" fill="#FFF8F2" stroke="#5C2E12" stroke-width="3" stroke-linejoin="round"/>
+        </svg>
+        <div class="splash-word">De<span>click</span></div>
+        <p class="splash-tag">Scrolle l'info. Pas les intox.</p>
+        <div class="splash-bar"><i></i></div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOPICS = ["Économie","Géopolitique","Politique","Tech","Culture","Science","Sport","Environnement"];
+const GRADIENTS = [
+  "linear-gradient(160deg,#2d2a12,#5a4a1c 55%,#181510)","linear-gradient(160deg,#123a2f,#1f5c47 55%,#101c1a)",
+  "linear-gradient(160deg,#241c3a,#3a235c 55%,#150f20)","linear-gradient(160deg,#1c2c3a,#233f5c 55%,#101820)",
+  "linear-gradient(160deg,#3a1c1c,#5c2323 55%,#1c1010)","linear-gradient(160deg,#1c3a2c,#236e46 55%,#0f1c15)",
+  "linear-gradient(160deg,#3a1f4d,#6e2a3f 55%,#1c1424)","linear-gradient(160deg,#3a2c1c,#6e4a23 55%,#1c150f)",
+];
+const RAW_FORYOU = [
+  ["Économie","Pourquoi l'inflation ralentit enfin en Europe","Le Monde","1:02"],
+  ["Économie","Le boom des small caps expliqué en 90 secondes","The Guardian","0:47"],
+  ["Économie","Ce que veut dire une hausse des taux, sans jargon","Reuters","0:55"],
+  ["Économie","3 graphiques pour comprendre le marché de l'emploi","Le Monde","1:12"],
+  ["Économie","Pourquoi les loyers montent plus vite dans certaines villes","The Guardian","0:49"],
+  ["Géopolitique","Ce sommet, en 4 questions simples","BBC News","0:52"],
+  ["Géopolitique","La carte des tensions en mer de Chine","Reuters","1:10"],
+  ["Géopolitique","Pourquoi ce cessez-le-feu est si fragile","Le Monde","1:03"],
+  ["Géopolitique","Les routes commerciales qui redessinent le monde","BBC News","1:18"],
+  ["Géopolitique","Ce qu'il faut savoir sur ce nouveau bloc régional","The Guardian","0:58"],
+  ["Politique","Le budget de l'État, expliqué simplement","Les Échos","0:41"],
+  ["Politique","Ce qui change pour les bourses étudiantes","Ouest-France","0:35"],
+  ["Politique","Pourquoi ce texte de loi divise autant","Le Monde","1:05"],
+  ["Politique","Les enjeux des prochaines élections locales","Reuters","0:57"],
+  ["Tech","L'IA qui compose de la musique : où en est-on ?","Le Monde","0:58"],
+  ["Tech","Ce robot japonais range vraiment ta chambre","The Guardian","0:44"],
+  ["Tech","Pourquoi ta batterie de téléphone vieillit si vite","Reuters","0:51"],
+  ["Tech","La puce qui pourrait remplacer ton disque dur","BBC News","0:46"],
+  ["Culture","Pourquoi le sample est devenu la signature d'un artiste","Le Monde","0:38"],
+  ["Culture","Ce plan-séquence de 6 minutes, décortiqué","The Guardian","0:54"],
+  ["Culture","L'histoire derrière cette expo qui affole Paris","Reuters","1:01"],
+  ["Culture","Pourquoi ce roman revient dans toutes les librairies","Le Monde","0:49"],
+  ["Science","Un algorithme français repère une exoplanète","Science & Vie","0:47"],
+  ["Science","Ce vaccin change la donne contre une maladie rare","The Guardian","1:00"],
+  ["Science","Pourquoi les abeilles désorientent les chercheurs","Reuters","0:53"],
+  ["Sport","Comment les données changent le recrutement en basket","Le Monde","1:05"],
+  ["Sport","Ce jeune espoir français fait déjà parler de lui","The Guardian","0:48"],
+  ["Sport","3 chiffres qui expliquent cette saison record","Science & Vie","0:39"],
+  ["Environnement","Vague de chaleur tardive : les régions concernées","National Geographic","0:29"],
+  ["Environnement","Cette forêt repousse deux fois plus vite que prévu","The Guardian","0:56"],
+  ["Environnement","Pourquoi cette rivière a retrouvé ses poissons","Le Monde","0:52"],
+];
+const FORYOU_POOL = RAW_FORYOU.map((r,i) => ({id:"fy"+(i+1), topic:r[0], title:r[1], source:r[2], duration:r[3], grad:GRADIENTS[i%GRADIENTS.length]}));
+const RAW_ACTU = [
+  ["Budget de l'État : ce que le vote change concrètement","Les Échos","0:41"],
+  ["Vague de chaleur tardive : les régions les plus concernées","National Geographic","0:29"],
+  ["Le sommet de demain, en 4 questions simples","BBC News","0:52"],
+  ["Ce qui change pour les bourses étudiantes à la rentrée","Ouest-France","0:35"],
+  ["Un algorithme français repère une exoplanète","Science & Vie","0:47"],
+  ["Ce texte de loi qui divise l'Assemblée cette semaine","Le Monde","1:05"],
+  ["La panne qui a touché des millions de téléphones hier","The Guardian","0:44"],
+  ["Ce qu'il faut retenir du sommet économique du jour","Reuters","0:58"],
+];
+const ACTU_TOPICS = ["Politique","Environnement","Géopolitique","Politique","Science","Politique","Tech","Économie"];
+const ACTU_TODAY = RAW_ACTU.map((r,i) => ({id:"a"+(i+1), topic:ACTU_TOPICS[i], title:r[0], source:r[1], duration:r[2], grad:GRADIENTS[(i+3)%GRADIENTS.length]}));
+const ALL_ARTICLES = {};
+FORYOU_POOL.forEach(a => ALL_ARTICLES[a.id]=a);
+ACTU_TODAY.forEach(a => ALL_ARTICLES[a.id]=a);
+
+function hashStr(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))|0; } return Math.abs(h); }
+function baseLikes(id){ return 24 + (hashStr(id) % 140); }
+
+const COMMENT_AUTHORS = ["Léa","Hugo","Sarah","Manon","Théo","Inès"];
+const FRIENDS = ["Léa","Hugo","Sarah","Manon","Théo","Inès","Lucas","Camille"];
+const JOURNALS = [
+  {id:"lemonde", name:"Le Monde", handle:"@lemonde", color:"#84421F", followers:482300, bio:"Quotidien généraliste : actualité nationale et internationale, analyses, enquêtes et décryptages."},
+  {id:"guardian", name:"The Guardian", handle:"@theguardian", color:"#C9662F", followers:611900, bio:"Journal britannique indépendant : reportages, opinions et grandes enquêtes sur l'actualité mondiale."},
+  {id:"reuters", name:"Reuters", handle:"@reuters", color:"#A55125", followers:355400, bio:"Agence de presse internationale : l'information brute, vérifiée et diffusée en temps réel."},
+  {id:"bbc", name:"BBC News", handle:"@bbcnews", color:"#8A5B3D", followers:540200, bio:"Information internationale en continu : politique, économie, société et culture."},
+  {id:"lesechos", name:"Les Échos", handle:"@lesechos", color:"#B8703F", followers:164800, bio:"Le quotidien de l'économie, de la finance et des entreprises."},
+  {id:"ouestfrance", name:"Ouest-France", handle:"@ouestfrance", color:"#6B3217", followers:203600, bio:"Actualité nationale et régionale : politique, société, éducation et vie locale."},
+  {id:"sciencevie", name:"Science & Vie", handle:"@sciencevie", color:"#D9692F", followers:97300, bio:"Magazine de vulgarisation scientifique : découvertes, recherche, santé et technologies."},
+  {id:"natgeo", name:"National Geographic", handle:"@natgeo", color:"#E37B42", followers:420100, bio:"Exploration, environnement et biodiversité : la planète racontée en images et en histoires."},
+];
+const JOURNAL_BY_NAME = {}; JOURNALS.forEach(j => JOURNAL_BY_NAME[j.name] = j);
+const JOURNAL_BY_ID = {}; JOURNALS.forEach(j => JOURNAL_BY_ID[j.id] = j);
+
+/* ---- Custom journals + published videos (shared across accounts on this device) ---- */
+const CJ_KEY = "declick_custom_journals", PUB_KEY = "declick_published";
+function loadJSON(k){ try { return JSON.parse(localStorage.getItem(k)) || []; } catch(e){ return []; } }
+function saveJSON(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+let PUBLISHED = [];
+function registerCustomJournals(){
+  loadJSON(CJ_KEY).forEach(j => {
+    if(!JOURNAL_BY_ID[j.id]){ JOURNALS.push(j); JOURNAL_BY_ID[j.id] = j; JOURNAL_BY_NAME[j.name] = j; }
+  });
+}
+function rebuildPublished(){
+  PUBLISHED.forEach(a => { delete ALL_ARTICLES[a.id]; });
+  PUBLISHED = loadJSON(PUB_KEY).filter(p => JOURNAL_BY_ID[p.journalId]).map(p => ({
+    id:p.id, journalId:p.journalId, topic:p.topic, title:p.title, source:JOURNAL_BY_ID[p.journalId].name,
+    duration:"Vidéo", body:p.body || "", fileName:p.fileName || "", grad:GRADIENTS[hashStr(p.id) % GRADIENTS.length], published:true
+  })).reverse();
+  PUBLISHED.forEach(a => { ALL_ARTICLES[a.id] = a; });
+}
+registerCustomJournals(); rebuildPublished();
+function followerCount(j){
+  if(!j.custom) return j.followers + (isFollowing(j.id) ? 1 : 0);
+  const accs = loadAccounts();
+  return Object.keys(accs).filter(id => accs[id] && accs[id].following && accs[id].following.includes(j.id)).length;
+}
+const COMMENT_TEXTS = [
+  "Super clair, merci pour le résumé.","Je ne savais pas du tout ça.","On en parle en cours la semaine prochaine.",
+  "Intéressant, j'aimerais en savoir plus.","Ça confirme ce qu'on disait hier.","Quelqu'un a la source complète ?",
+];
+function seededComments(articleId){
+  const h = hashStr(articleId);
+  const a1 = COMMENT_AUTHORS[h % COMMENT_AUTHORS.length];
+  const a2 = COMMENT_AUTHORS[(h+2) % COMMENT_AUTHORS.length];
+  const t1 = COMMENT_TEXTS[h % COMMENT_TEXTS.length];
+  const t2 = COMMENT_TEXTS[(h+3) % COMMENT_TEXTS.length];
+  return [{author:a1, text:t1}, {author:a2, text:t2}];
+}
+
+const ACCOUNTS_KEY = "declick_accounts";
+const CURRENT_KEY = "declick_current_account";
+
+function loadAccounts(){
+  let a;
+  try { a = JSON.parse(localStorage.getItem(ACCOUNTS_KEY)); } catch(e){ a=null; }
+  return a || {};
+}
+function saveAccounts(accs){ try { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accs)); } catch(e){} }
+function seedChats(){
+  const now = Date.now(), H = 3600000;
+  return {
+    "Léa":[{from:"them",text:"Tu as vu les chiffres de l'inflation ce matin ?",ts:now-5*H},{from:"me",text:"Oui, c'est plus bas que prévu !",ts:now-4.5*H},{from:"them",text:"On en parle en cours demain ?",ts:now-4*H}],
+    "Hugo":[{from:"them",text:"Je t'ai gardé la vidéo sur la mer de Chine, elle est vraiment bien faite.",ts:now-26*H}],
+    "Sarah":[{from:"me",text:"Merci pour le conseil de lecture !",ts:now-50*H},{from:"them",text:"Avec plaisir, dis-moi ce que tu en as pensé.",ts:now-49*H}]
+  };
+}
+function normalizeState(s){
+  if(!s.liked) s.liked=[]; if(!s.shared) s.shared=[]; if(!s.reported) s.reported=[]; if(!s.comments) s.comments={};
+  if(!s.saved) s.saved=[]; if(!s.interests) s.interests=[];
+  if(!s.following) s.following=["lemonde","guardian","reuters"];
+  if(!s.chats){
+    s.chats = seedChats();
+    if(s.messages){ Object.keys(s.messages).forEach(n => { const m = s.messages[n]; if(!s.chats[n]) s.chats[n]=[]; if(m && m.articleId) s.chats[n].push({from:"me",articleId:m.articleId,ts:Date.now()}); }); }
+  }
+  delete s.messages;
+  if(s.account && !s.account.avatarColor) s.account.avatarColor = "#E37B42";
+  if(s.account && !s.account.type) s.account.type = "user";
+  if(s.account && s.account.email===undefined) s.account.email = "";
+  return s;
+}
+function freshState(account){
+  return {account:account, interests:[], streak:1, lastVisit:null, saved:[], liked:[], shared:[], reported:[], comments:{}, following:["lemonde","guardian","reuters"], chats:seedChats()};
+}
+function makeAccountId(handle){
+  const base = (handle||"user").replace("@","").toLowerCase().replace(/[^a-z0-9]/g,"") || "user";
+  const accs = loadAccounts();
+  let id = base, n = 1;
+  while(accs[id]){ id = base + n; n++; }
+  return id;
+}
+function saveState(s){
+  const accs = loadAccounts();
+  accs[currentAccountId] = s;
+  saveAccounts(accs);
+}
+let currentAccountId = localStorage.getItem(CURRENT_KEY);
+let state;
+{
+  const accs = loadAccounts();
+  if(currentAccountId && accs[currentAccountId]){ state = normalizeState(accs[currentAccountId]); }
+  else { state = freshState(null); }
+}
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function applyDailyStreakLogic(){
+  const today = todayStr();
+  if(!state.lastVisit){ state.streak = 1; }
+  else if(state.lastVisit !== today){
+    const diffDays = Math.round((new Date(today) - new Date(state.lastVisit)) / 86400000);
+    if(diffDays === 1){ state.streak += 1; }
+    else if(diffDays > 1){ state.streak = Math.max(1, state.streak - Math.min(diffDays, 3)); }
+  }
+  state.lastVisit = today;
+  saveState(state);
+}
+function levelFromStreak(streak){ return Math.max(1, Math.min(10, streak)); }
+
+/* ---- Brain scene ---- */
+const BRAIN_SVG =
+  '<svg viewBox="0 0 200 200" style="width:100%;height:100%;display:block;">' +
+  '<ellipse cx="100" cy="192" rx="46" ry="6" fill="#4A2410" opacity="0.12"/>' +
+  '<path d="M78 140 L78 176" stroke="#F6C9A8" stroke-width="10" stroke-linecap="round" fill="none"/>' +
+  '<rect x="66" y="172" width="24" height="8" rx="4" fill="#D99B6E"/>' +
+  '<rect x="62" y="178" width="32" height="20" rx="9" fill="#FFF3E9" stroke="#4A2410" stroke-width="3"/>' +
+  '<path d="M122 140 L122 176" stroke="#F6C9A8" stroke-width="10" stroke-linecap="round" fill="none"/>' +
+  '<rect x="110" y="172" width="24" height="8" rx="4" fill="#D99B6E"/>' +
+  '<rect x="106" y="178" width="32" height="20" rx="9" fill="#FFF3E9" stroke="#4A2410" stroke-width="3"/>' +
+  '<path d="M35 96 Q14 118 21 148" stroke="#F6C9A8" stroke-width="9" stroke-linecap="round" fill="none"/>' +
+  '<rect x="12" y="140" width="20" height="7" rx="3.5" fill="#FFF3E9" stroke="#4A2410" stroke-width="2"/>' +
+  '<circle cx="21" cy="154" r="11" fill="#F6C9A8" stroke="#4A2410" stroke-width="3"/>' +
+  '<path d="M165 96 Q186 118 179 148" stroke="#F6C9A8" stroke-width="9" stroke-linecap="round" fill="none"/>' +
+  '<rect x="168" y="140" width="20" height="7" rx="3.5" fill="#FFF3E9" stroke="#4A2410" stroke-width="2"/>' +
+  '<circle cx="179" cy="154" r="11" fill="#F6C9A8" stroke="#4A2410" stroke-width="3"/>' +
+  '<ellipse cx="100" cy="85" rx="72" ry="58" fill="#F6C9A8" stroke="#4A2410" stroke-width="4"/>' +
+  '<circle cx="48" cy="55" r="18" fill="#F6C9A8" stroke="#4A2410" stroke-width="4"/>' +
+  '<circle cx="82" cy="32" r="20" fill="#F6C9A8" stroke="#4A2410" stroke-width="4"/>' +
+  '<circle cx="118" cy="32" r="20" fill="#F6C9A8" stroke="#4A2410" stroke-width="4"/>' +
+  '<circle cx="152" cy="55" r="18" fill="#F6C9A8" stroke="#4A2410" stroke-width="4"/>' +
+  '<path d="M60 58 Q76 44 94 54" stroke="#D99B6E" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+  '<path d="M106 54 Q124 44 140 58" stroke="#D99B6E" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+  '<path d="M100 28 Q97 44 100 58" stroke="#D99B6E" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+  '<path d="M70 104 Q100 92 130 104" stroke="#D99B6E" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+  '<circle cx="80" cy="97" r="25" fill="#FFFFFF" stroke="#4A2410" stroke-width="3.5"/>' +
+  '<circle cx="123" cy="97" r="25" fill="#FFFFFF" stroke="#4A2410" stroke-width="3.5"/>' +
+  '<circle cx="86" cy="91" r="10.5" fill="#241B12"/><circle cx="129" cy="91" r="10.5" fill="#241B12"/>' +
+  '<circle cx="90" cy="86" r="3" fill="#FFFFFF"/><circle cx="133" cy="86" r="3" fill="#FFFFFF"/>' +
+  '<path d="M88 132 Q101 139 114 132" stroke="#D99B6E" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+  '</svg>';
+
+const ROOM_SVG = '<svg viewBox="0 0 300 200" style="width:100%;height:100%;display:block;"><defs><linearGradient id="gRoom" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF8F2"/><stop offset="1" stop-color="#FFE3C2"/></linearGradient></defs><rect width="300" height="200" fill="url(#gRoom)"/><rect x="0" y="172" width="300" height="28" fill="#E8CB98"/><ellipse cx="150" cy="188" rx="72" ry="9" fill="#F0C7A4" opacity="0.85"/><rect x="212" y="18" width="60" height="58" rx="8" fill="#CFEFEA" stroke="#4A2410" stroke-width="3"/><line x1="242" y1="18" x2="242" y2="76" stroke="#FFFFFF" stroke-width="3"/><line x1="212" y1="47" x2="272" y2="47" stroke="#FFFFFF" stroke-width="3"/><circle cx="230" cy="34" r="8" fill="#E8985E"/><line x1="38" y1="150" x2="38" y2="108" stroke="#8A5B3D" stroke-width="3"/><polygon points="16,108 60,108 38,78" fill="#E37B42" stroke="#4A2410" stroke-width="3"/><line x1="252" y1="172" x2="252" y2="150" stroke="#4E9B5E" stroke-width="4"/><ellipse cx="244" cy="146" rx="10" ry="7" fill="#4E9B5E"/><ellipse cx="260" cy="146" rx="10" ry="7" fill="#4E9B5E"/></svg>';
+const HOUSE_SVG = '<svg viewBox="0 0 300 200" style="width:100%;height:100%;display:block;"><defs><linearGradient id="gHouse" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CFEFEA"/><stop offset="1" stop-color="#EAF9F3"/></linearGradient></defs><rect width="300" height="200" fill="url(#gHouse)"/><rect x="0" y="160" width="300" height="40" fill="#BFE3C7"/><circle cx="252" cy="34" r="16" fill="#E8985E"/><line x1="252" y1="8" x2="252" y2="18" stroke="#E8985E" stroke-width="3"/><line x1="252" y1="50" x2="252" y2="60" stroke="#E8985E" stroke-width="3"/><line x1="228" y1="34" x2="238" y2="34" stroke="#E8985E" stroke-width="3"/><line x1="266" y1="34" x2="276" y2="34" stroke="#E8985E" stroke-width="3"/><rect x="108" y="110" width="94" height="60" fill="#FFF8F2" stroke="#4A2410" stroke-width="3"/><polygon points="98,110 155,70 212,110" fill="#E37B42" stroke="#4A2410" stroke-width="3"/><rect x="146" y="136" width="22" height="34" fill="#4A2410"/><rect x="120" y="122" width="18" height="18" fill="#CFEFEA" stroke="#4A2410" stroke-width="2"/><rect x="172" y="122" width="18" height="18" fill="#CFEFEA" stroke="#4A2410" stroke-width="2"/><ellipse cx="80" cy="168" rx="22" ry="14" fill="#4E9B5E"/><ellipse cx="230" cy="168" rx="22" ry="14" fill="#4E9B5E"/><path d="M40 46 q6 -6 12 0 q6 -6 12 0" stroke="#4A2410" stroke-width="2" fill="none"/></svg>';
+const CITY_SVG = '<svg viewBox="0 0 300 200" style="width:100%;height:100%;display:block;"><defs><linearGradient id="gCity" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FC7E0"/><stop offset="1" stop-color="#CFE9EF"/></linearGradient></defs><rect width="300" height="200" fill="url(#gCity)"/><circle cx="252" cy="30" r="14" fill="#E8985E"/><rect x="0" y="170" width="300" height="30" fill="#D9C9A6"/><rect x="14" y="120" width="34" height="80" fill="#D9C9A6" stroke="#4A2410" stroke-width="2"/><rect x="60" y="88" width="34" height="112" fill="#BFAF8E" stroke="#4A2410" stroke-width="2"/><rect x="106" y="108" width="34" height="92" fill="#D9C9A6" stroke="#4A2410" stroke-width="2"/><rect x="152" y="66" width="36" height="134" fill="#FFE9DA" stroke="#4A2410" stroke-width="2"/><rect x="200" y="98" width="34" height="102" fill="#BFAF8E" stroke="#4A2410" stroke-width="2"/><rect x="246" y="128" width="34" height="72" fill="#D9C9A6" stroke="#4A2410" stroke-width="2"/><rect x="22" y="132" width="8" height="8" fill="#E37B42"/><rect x="34" y="150" width="8" height="8" fill="#E37B42"/><rect x="68" y="100" width="8" height="8" fill="#E37B42"/><rect x="80" y="118" width="8" height="8" fill="#E37B42"/><rect x="160" y="80" width="8" height="8" fill="#E37B42"/><rect x="172" y="98" width="8" height="8" fill="#E37B42"/><rect x="160" y="116" width="8" height="8" fill="#E37B42"/><path d="M100 40 q6 -6 12 0 q6 -6 12 0" stroke="#4A2410" stroke-width="2" fill="none"/></svg>';
+const SKYSCRAPER_SVG = '<svg viewBox="0 0 300 200" style="width:100%;height:100%;display:block;"><defs><linearGradient id="gSkyscraper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4E9BC4"/><stop offset="1" stop-color="#9FD3E8"/></linearGradient></defs><rect width="300" height="200" fill="url(#gSkyscraper)"/><ellipse cx="60" cy="150" rx="34" ry="11" fill="#FFFFFF" opacity="0.8"/><ellipse cx="250" cy="120" rx="30" ry="10" fill="#FFFFFF" opacity="0.7"/><rect x="0" y="186" width="300" height="14" fill="#D9C9A6"/><rect x="118" y="8" width="64" height="178" fill="#FFE9DA" stroke="#4A2410" stroke-width="3"/><line x1="150" y1="8" x2="150" y2="0" stroke="#4A2410" stroke-width="3"/><circle cx="150" cy="0" r="3" fill="#E63946"/><rect x="130" y="24" width="12" height="12" fill="#E37B42"/><rect x="158" y="24" width="12" height="12" fill="#E37B42"/><rect x="130" y="48" width="12" height="12" fill="#84421F"/><rect x="158" y="48" width="12" height="12" fill="#E37B42"/><rect x="130" y="72" width="12" height="12" fill="#E37B42"/><rect x="158" y="72" width="12" height="12" fill="#84421F"/><rect x="130" y="96" width="12" height="12" fill="#E37B42"/><rect x="158" y="96" width="12" height="12" fill="#E37B42"/><rect x="130" y="120" width="12" height="12" fill="#84421F"/><rect x="158" y="120" width="12" height="12" fill="#E37B42"/><path d="M40 50 q6 -6 12 0 q6 -6 12 0" stroke="#FFFFFF" stroke-width="2" fill="none"/><path d="M220 70 q6 -6 12 0 q6 -6 12 0" stroke="#FFFFFF" stroke-width="2" fill="none"/></svg>';
+const SKY_SVG = '<svg viewBox="0 0 300 200" style="width:100%;height:100%;display:block;"><defs><linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5FB6DE"/><stop offset="1" stop-color="#BDE6F2"/></linearGradient></defs><rect width="300" height="200" fill="url(#gSky)"/><circle cx="240" cy="44" r="24" fill="#E8985E" opacity="0.95"/><ellipse cx="60" cy="70" rx="38" ry="17" fill="#FFFFFF"/><ellipse cx="90" cy="60" rx="26" ry="15" fill="#FFFFFF"/><ellipse cx="30" cy="78" rx="22" ry="12" fill="#FFFFFF"/><ellipse cx="210" cy="150" rx="40" ry="17" fill="#FFFFFF"/><ellipse cx="240" cy="140" rx="26" ry="14" fill="#FFFFFF"/><ellipse cx="120" cy="130" rx="30" ry="13" fill="#FFFFFF" opacity="0.7"/><ellipse cx="150" cy="122" rx="22" ry="11" fill="#FFFFFF" opacity="0.7"/></svg>';
+const SPACE_SVG = '<svg viewBox="0 0 300 200" style="width:100%;height:100%;display:block;"><defs><linearGradient id="gSpace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1B2B"/><stop offset="1" stop-color="#1B2E42"/></linearGradient></defs><rect width="300" height="200" fill="url(#gSpace)"/><circle cx="40" cy="40" r="2" fill="#FFF8F2"/><circle cx="80" cy="80" r="2" fill="#FFF8F2"/><circle cx="130" cy="26" r="2.4" fill="#FFF8F2"/><circle cx="20" cy="120" r="2" fill="#FFF8F2"/><circle cx="176" cy="96" r="2" fill="#FFF8F2"/><circle cx="200" cy="150" r="2" fill="#FFF8F2"/><circle cx="270" cy="160" r="2" fill="#FFF8F2"/><circle cx="150" cy="176" r="2" fill="#FFF8F2"/><circle cx="108" cy="150" r="1.6" fill="#FFF8F2"/><circle cx="60" cy="52" r="17" fill="#FFF3E9"/><circle cx="68" cy="47" r="15" fill="#1B2E42"/><circle cx="238" cy="34" r="16" fill="#E37B42"/><ellipse cx="238" cy="34" rx="28" ry="7" fill="none" stroke="#FFF8F2" stroke-width="2"/><line x1="30" y1="150" x2="55" y2="170" stroke="#FFF8F2" stroke-width="2" opacity="0.8"/><circle cx="55" cy="170" r="2" fill="#FFF8F2"/></svg>';
+
+function sceneForStreak(streak){
+  if(streak>=20) return {stage:6, label:"Ton cerveau flotte dans l'espace.", svg:SPACE_SVG};
+  if(streak>=15) return {stage:5, label:"Ton cerveau touche le ciel.", svg:SKY_SVG};
+  if(streak>=10) return {stage:4, label:"Ton cerveau a la taille d'un gratte-ciel.", svg:SKYSCRAPER_SVG};
+  if(streak>=6)  return {stage:3, label:"Ton cerveau a la taille d'une ville.", svg:CITY_SVG};
+  if(streak>=3)  return {stage:2, label:"Ton cerveau a la taille d'une maison.", svg:HOUSE_SVG};
+  return {stage:1, label:"Ton cerveau tient dans ta chambre.", svg:ROOM_SVG};
+}
+
+function renderBrain(){
+  const level = levelFromStreak(state.streak);
+  document.getElementById("streakMini").textContent = state.streak + "j";
+  document.getElementById("statLevel").textContent = level;
+  document.getElementById("statStreak").textContent = state.streak;
+  updateLibraryCounts();
+
+  const scene = sceneForStreak(state.streak);
+  document.getElementById("sceneBackdrop").innerHTML = scene.svg;
+  document.getElementById("brainWrap").innerHTML = BRAIN_SVG;
+  const brainScale = Math.min(1.7, 0.55 + state.streak*0.05);
+  document.getElementById("brainWrap").style.transform = "translate(-50%,-50%) scale(" + brainScale + ")";
+  document.getElementById("stageLabel").textContent = scene.label;
+  const dots = document.getElementById("stageDots");
+  dots.innerHTML = "";
+  for(let i=1;i<=6;i++){
+    const d = document.createElement("span");
+    if(i<=scene.stage) d.className = "on";
+    dots.appendChild(d);
+  }
+
+  if(state.account){
+    document.getElementById("avatarInitial").textContent = state.account.name.charAt(0).toUpperCase();
+    document.getElementById("avatarInitial").style.background = state.account.avatarColor || "var(--card)";
+    document.getElementById("avatarInitial").style.color = state.account.avatarColor ? "#FFF8F2" : "var(--ink)";
+    document.getElementById("profileName").textContent = state.account.name;
+    document.getElementById("profileHandle").textContent = state.account.handle;
+  }
+  renderMessages();
+}
+function simulateDay(connected){
+  if(connected){ state.streak += 1; } else { state.streak = Math.max(1, state.streak - 2); }
+  saveState(state);
+  renderBrain();
+}
+
+function buildChipsInto(containerId){
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML = "";
+  TOPICS.forEach(topic => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (state.interests.includes(topic) ? " active" : "");
+    chip.type = "button"; chip.textContent = topic;
+    chip.onclick = () => {
+      chip.classList.toggle("active");
+      if(containerId === "chipListSignup"){
+        pendingInterests = activeChipsIn("chipListSignup");
+        document.getElementById("signup2Btn").disabled = pendingInterests.length === 0;
+      }
+    };
+    wrap.appendChild(chip);
+  });
+}
+function activeChipsIn(containerId){ return Array.from(document.querySelectorAll("#"+containerId+" .chip.active")).map(c=>c.textContent); }
+
+function onSignup1Input(){ document.getElementById("signup1Btn").disabled = document.getElementById("inputName").value.trim().length===0; }
+let pendingInterests = [];
+const SIGNUP_SCREENS = ["signupType","signup1","signup2","signupJ1","signupJ2","loginScreen"];
+function showOnly(id){ SIGNUP_SCREENS.forEach(n => document.getElementById(n).classList.toggle("visible", n===id)); }
+function showSignupType(){
+  document.getElementById("haveAccountBtn").style.display = Object.keys(loadAccounts()).length > 0 ? "" : "none";
+  showOnly("signupType");
+}
+function chooseType(t){ showOnly(t==="journal" ? "signupJ1" : "signup1"); }
+function backToType(){ showSignupType(); }
+function backToLogin(){ showOnly("loginScreen"); renderLoginScreen(); }
+function goToSignup2(){
+  showOnly("signup2");
+  buildChipsInto("chipListSignup");
+  pendingInterests = [];
+  document.getElementById("signup2Btn").disabled = true;
+}
+function backToSignup1(){ showOnly("signup1"); }
+function finishSignup(){
+  if(pendingInterests.length===0) return;
+  const name = document.getElementById("inputName").value.trim();
+  const handle = document.getElementById("inputHandle").value.trim() || ("@"+name.toLowerCase());
+  const id = makeAccountId(handle);
+  state = freshState({name:name, handle:handle, email:"", avatarColor:AVATAR_COLORS[0], type:"user"});
+  state.interests = pendingInterests;
+  currentAccountId = id;
+  localStorage.setItem(CURRENT_KEY, id);
+  applyDailyStreakLogic();
+  saveState(state);
+  showOnly("");
+  enterApp();
+}
+
+/* ---- Journal signup ---- */
+function onJ1Input(){
+  const n = document.getElementById("jName").value.trim(), e = document.getElementById("jEmail").value.trim();
+  document.getElementById("j1Btn").disabled = !(n.length>0 && /.+@.+\..+/.test(e));
+}
+function goToJ2(){
+  const n = document.getElementById("jName").value.trim();
+  if(JOURNAL_BY_NAME[n]){ showToast("Ce nom de média existe déjà."); return; }
+  showOnly("signupJ2");
+}
+function backToJ1(){ showOnly("signupJ1"); }
+function onJ2Input(){
+  const f = document.getElementById("jProof").files[0];
+  document.getElementById("jProofName").textContent = f ? f.name : "Ajouter un justificatif";
+  document.getElementById("jProofBtn").classList.toggle("has-file", !!f);
+  document.getElementById("j2Btn").disabled = !(f && document.getElementById("jCertify").checked);
+}
+function slugify(t){ return normText(t).replace(/[^a-z0-9]/g,""); }
+function submitJournal(){
+  const f = document.getElementById("jProof").files[0];
+  if(!f || !document.getElementById("jCertify").checked) return;
+  const name = document.getElementById("jName").value.trim();
+  const handle = document.getElementById("jHandle").value.trim() || ("@"+slugify(name));
+  const acc = {name:name, handle:handle.charAt(0)==="@" ? handle : "@"+handle, email:document.getElementById("jEmail").value.trim(),
+    bio:document.getElementById("jBio").value.trim(), avatarColor:AVATAR_COLORS[1], type:"journal", verified:false, proofName:f.name, journalId:null};
+  const id = makeAccountId(acc.handle);
+  state = freshState(acc);
+  state.interests = TOPICS.slice();
+  currentAccountId = id;
+  localStorage.setItem(CURRENT_KEY, id);
+  applyDailyStreakLogic();
+  saveState(state);
+  showOnly("");
+  enterApp();
+  showTab("publish");
+  showToast("Demande envoyée, vérification en cours");
+}
+function verifyJournal(){
+  const acc = state.account; if(!acc || acc.type!=="journal" || acc.verified) return;
+  const jid = "c_" + (slugify(acc.name) || "media") + "_" + Date.now().toString(36);
+  const list = loadJSON(CJ_KEY);
+  list.push({id:jid, name:acc.name, handle:acc.handle, color:acc.avatarColor, followers:0, custom:true, bio:acc.bio || "Média partenaire sur Declick."});
+  saveJSON(CJ_KEY, list);
+  registerCustomJournals();
+  acc.verified = true; acc.journalId = jid;
+  saveState(state);
+  rebuildPublished();
+  renderAll();
+  showToast("Compte vérifié : tu peux publier");
+}
+
+/* ---- Publish (verified journals) ---- */
+function onPubInput(){
+  const f = document.getElementById("pubFile").files[0];
+  document.getElementById("pubFileName").textContent = f ? f.name : "Choisir une vidéo";
+  document.getElementById("pubFileBtn").classList.toggle("has-file", !!f);
+  document.getElementById("pubBtn").disabled = !(f && document.getElementById("pubTitle").value.trim());
+}
+function publishVideo(){
+  const acc = state.account, f = document.getElementById("pubFile").files[0];
+  const title = document.getElementById("pubTitle").value.trim();
+  if(!acc || !acc.verified || !f || !title) return;
+  const list = loadJSON(PUB_KEY);
+  list.push({id:"p"+Date.now(), journalId:acc.journalId, title:title, topic:document.getElementById("pubTopic").value,
+    body:document.getElementById("pubBody").value.trim(), fileName:f.name, ts:Date.now()});
+  saveJSON(PUB_KEY, list);
+  rebuildPublished();
+  document.getElementById("pubTitle").value = ""; document.getElementById("pubBody").value = ""; document.getElementById("pubFile").value = "";
+  onPubInput();
+  renderPublish(); renderForYou(); renderActu(); applyAccountType();
+  showToast("Vidéo publiée");
+}
+function deletePublished(id){
+  saveJSON(PUB_KEY, loadJSON(PUB_KEY).filter(p => p.id !== id));
+  rebuildPublished();
+  renderPublish(); renderForYou(); renderActu(); applyAccountType();
+  showToast("Publication supprimée");
+}
+function renderPublish(){
+  const acc = state.account;
+  if(!acc || acc.type !== "journal") return;
+  document.getElementById("publishPending").style.display = acc.verified ? "none" : "";
+  document.getElementById("publishForm").style.display = acc.verified ? "" : "none";
+  document.getElementById("proofFileLabel").textContent = acc.proofName ? "Pièce transmise : " + acc.proofName : "";
+  const sel = document.getElementById("pubTopic");
+  if(!sel.options.length) sel.innerHTML = TOPICS.map(t => '<option>'+t+'</option>').join("");
+  const mine = PUBLISHED.filter(a => a.journalId === acc.journalId);
+  document.getElementById("myPubs").innerHTML = mine.length ? mine.map(a =>
+    '<div class="my-pub"><span class="thumb" style="background:'+a.grad+'"></span><span class="info"><b>'+a.title.replace(/</g,"&lt;")+'</b><small>'+a.topic+' · '+(a.fileName||"vidéo").replace(/</g,"&lt;")+'</small></span><button onclick="deletePublished(\''+a.id+'\')">Supprimer</button></div>'
+  ).join("") : '<p class="no-result" style="padding:10px 0">Aucune publication pour l\'instant.</p>';
+}
+
+/* ---- Per-account-type UI ---- */
+function applyAccountType(){
+  const acc = state.account, isJ = !!(acc && acc.type === "journal");
+  document.getElementById("tabPublish").style.display = isJ ? "" : "none";
+  document.getElementById("cardProgress").style.display = isJ ? "none" : "";
+  document.getElementById("cardInterests").style.display = isJ ? "none" : "";
+  document.getElementById("statsUser").style.display = isJ ? "none" : "";
+  document.getElementById("statsJournal").style.display = isJ ? "" : "none";
+  const badge = document.getElementById("profileBadge");
+  badge.style.display = isJ ? "" : "none";
+  if(isJ){
+    badge.textContent = acc.verified ? "Compte journal vérifié" : "Compte journal · vérification en cours";
+    badge.classList.toggle("ok", !!acc.verified);
+    const j = JOURNAL_BY_ID[acc.journalId];
+    document.getElementById("statContents").textContent = PUBLISHED.filter(a => a.journalId === acc.journalId).length;
+    document.getElementById("statFollowers").textContent = j ? followerCount(j).toLocaleString("fr-FR") : "0";
+    renderPublish();
+  }
+  if(!isJ && document.getElementById("panel-publish").classList.contains("visible")) showTab("toi");
+}
+function enterApp(){ document.getElementById("mainApp").style.display = "flex"; renderAll(); }
+
+function startNewAccount(){
+  state = freshState(null);
+  pendingInterests = [];
+  ["inputName","inputHandle","jName","jHandle","jEmail","jBio"].forEach(id => { document.getElementById(id).value = ""; });
+  document.getElementById("jProof").value = ""; document.getElementById("jCertify").checked = false;
+  document.getElementById("signup1Btn").disabled = true; document.getElementById("j1Btn").disabled = true; document.getElementById("j2Btn").disabled = true;
+  onJ2Input();
+  showSignupType();
+}
+
+function renderLoginScreen(){
+  const accs = loadAccounts();
+  const list = document.getElementById("accountList");
+  const ids = Object.keys(accs).filter(id => accs[id] && accs[id].account);
+  if(ids.length===0){ list.innerHTML = '<p class="sub" style="margin:0 0 12px">Aucun compte enregistré sur cet appareil.</p>'; return; }
+  list.innerHTML = ids.map(id => {
+    const a = accs[id].account;
+    return '<button class="account-btn" onclick="loginAs(\''+id+'\')"><span class="avatar-mini">'+a.name.charAt(0).toUpperCase()+'</span><span><b>'+a.name+'</b><br>'+a.handle+(a.type==="journal" ? " · Journal" : "")+'</span></button>';
+  }).join("");
+}
+function loginAs(id){
+  const accs = loadAccounts();
+  if(!accs[id]) return;
+  state = normalizeState(accs[id]);
+  currentAccountId = id;
+  localStorage.setItem(CURRENT_KEY, id);
+  applyDailyStreakLogic();
+  document.getElementById("loginScreen").classList.remove("visible");
+  enterApp();
+}
+function closeAllOverlays(){
+  document.querySelectorAll(".page-overlay, .sheet-overlay, .article-overlay, .comment-sheet").forEach(el => el.classList.remove("open"));
+  activeChat = null;
+}
+function logout(){
+  closeAllOverlays();
+  saveState(state);
+  localStorage.removeItem(CURRENT_KEY);
+  currentAccountId = null;
+  document.getElementById("mainApp").style.display = "none";
+  showTab("toi");
+  showOnly("loginScreen");
+  renderLoginScreen();
+}
+
+/* ---- Edit profile sheet ---- */
+const AVATAR_COLORS = ["#E37B42","#84421F","#C9714A","#A55125","#E8985E","#B8703F"];
+let selectedAvatarColor = null;
+function openEditProfile(){
+  const acc = state.account || {name:"", handle:"", email:""};
+  document.getElementById("editName").value = acc.name || "";
+  document.getElementById("editHandle").value = acc.handle || "";
+  document.getElementById("editEmail").value = acc.email || "";
+  selectedAvatarColor = acc.avatarColor || AVATAR_COLORS[0];
+  const row = document.getElementById("avatarPickRow");
+  row.innerHTML = AVATAR_COLORS.map(c =>
+    '<button class="avatar-pick'+(c===selectedAvatarColor?" picked":"")+'" style="background:'+c+'" data-color="'+c+'" onclick="pickAvatarColor(this)">'+(acc.name?acc.name.charAt(0).toUpperCase():"?")+'</button>'
+  ).join("");
+  const isJ = acc.type === "journal";
+  document.getElementById("editInterestsWrap").style.display = isJ ? "none" : "";
+  document.getElementById("editNameLabel").textContent = isJ ? "Nom du média (vérifié)" : "Prénom";
+  document.getElementById("editName").disabled = isJ; document.getElementById("editHandle").disabled = isJ;
+  if(!isJ) buildChipsInto("chipListEdit");
+  document.getElementById("editProfileSheet").classList.add("open");
+}
+function pickAvatarColor(btn){
+  selectedAvatarColor = btn.dataset.color;
+  document.querySelectorAll("#avatarPickRow .avatar-pick").forEach(b => b.classList.toggle("picked", b===btn));
+}
+function closeEditProfile(){ document.getElementById("editProfileSheet").classList.remove("open"); }
+function saveEditProfile(){
+  const name = document.getElementById("editName").value.trim() || (state.account && state.account.name) || "Toi";
+  const handle = document.getElementById("editHandle").value.trim() || "@"+name.toLowerCase();
+  const email = document.getElementById("editEmail").value.trim();
+  const prev = state.account || {};
+  state.account = Object.assign({}, prev, {name:name, handle:handle, email:email, avatarColor:selectedAvatarColor});
+  if(prev.type !== "journal") state.interests = activeChipsIn("chipListEdit");
+  if(prev.type === "journal" && prev.journalId && JOURNAL_BY_ID[prev.journalId]){
+    JOURNAL_BY_ID[prev.journalId].color = selectedAvatarColor;
+    saveJSON(CJ_KEY, loadJSON(CJ_KEY).map(j => j.id === prev.journalId ? Object.assign(j, {color:selectedAvatarColor}) : j));
+  }
+  saveState(state);
+  closeEditProfile();
+  renderBrain(); renderInterestSummary(); renderForYou(); applyAccountType();
+  showToast("Profil mis à jour");
+}
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+const ICONS = {
+  like: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 21s-7.5-4.7-10-9.3C.6 8.4 2.3 5 5.7 5c2 0 3.4 1.2 4.3 2.5C10.9 6.2 12.3 5 14.3 5c3.4 0 5.1 3.4 3.7 6.7C15.5 16.3 12 21 12 21Z"/></svg>',
+  comment: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5c0 4.14-4.03 7.5-9 7.5-1 0-1.96-.13-2.85-.38L4 20l1.1-3.3C4.4 15.5 4 13.6 4 11.5 4 7.36 8.03 4 13 4s8 3.36 8 7.5Z"/></svg>',
+  save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4h12v17l-6-4-6 4Z"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 4l5 5-5 5M20 9H9.5C6 9 4 11 4 14.5V20"/></svg>',
+  report: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3v18M5 3h11l-2.5 4L16 11H5"/></svg>',
+};
+
+function toggleSimple(articleId, kind, msgOn, msgOff){
+  const list = state[kind];
+  const i = list.indexOf(articleId);
+  if(i>=0){ list.splice(i,1); } else { list.push(articleId); showToast(msgOn); }
+  if(i>=0) showToast(msgOff);
+  saveState(state);
+  document.querySelectorAll('[data-article="'+articleId+'"][data-kind="'+kind+'"]').forEach(btn => btn.classList.toggle("on", list.indexOf(articleId)>=0));
+  if(kind==="liked") document.querySelectorAll('[data-count-for="'+articleId+'"]').forEach(el => {
+    el.textContent = baseLikes(articleId) + (state.liked.includes(articleId)?1:0);
+  });
+  renderContentGrid();
+}
+
+/* ---- Report sheet ---- */
+const REPORT_REASONS = ["Contenu trompeur ou fake news","Discours haineux ou harcèlement","Contenu violent ou choquant","Publicité ou spam déguisé","Autre raison"];
+let activeReportArticle = null;
+let pickedReportReason = null;
+function openReportSheet(articleId){
+  activeReportArticle = articleId;
+  pickedReportReason = null;
+  document.getElementById("reportSubmitBtn").disabled = true;
+  document.getElementById("reportOptions").innerHTML = REPORT_REASONS.map((r,i) =>
+    '<button class="report-option" data-i="'+i+'" onclick="pickReportReason('+i+')"><span>'+r+'</span><span class="radio"></span></button>'
+  ).join("");
+  document.getElementById("reportSheet").classList.add("open");
+}
+function pickReportReason(i){
+  pickedReportReason = REPORT_REASONS[i];
+  document.querySelectorAll("#reportOptions .report-option").forEach(b => b.classList.toggle("picked", Number(b.dataset.i)===i));
+  document.getElementById("reportSubmitBtn").disabled = false;
+}
+function closeReportSheet(){ document.getElementById("reportSheet").classList.remove("open"); activeReportArticle=null; }
+function submitReport(){
+  if(!activeReportArticle || !pickedReportReason) return;
+  if(!state.reported.includes(activeReportArticle)) state.reported.push(activeReportArticle);
+  saveState(state);
+  closeReportSheet();
+  showToast("Signalé pour « "+pickedReportReason+" » — merci.");
+  renderForYou(); renderActu();
+}
+
+/* ---- Overlay stacking ---- */
+let zTop = 100;
+function bringToFront(el){ zTop++; el.style.zIndex = zTop; }
+function friendColor(name){ return AVATAR_COLORS[Math.max(0, FRIENDS.indexOf(name)) % AVATAR_COLORS.length]; }
+function normText(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+function timeAgo(ts){
+  const m = Math.round((Date.now() - ts) / 60000);
+  if(m < 1) return "à l'instant";
+  if(m < 60) return m + " min";
+  const h = Math.round(m / 60);
+  if(h < 24) return h + " h";
+  const d = Math.round(h / 24);
+  return d === 1 ? "hier" : d + " j";
+}
+
+/* ---- Share sheet ---- */
+let activeShareArticle = null;
+function openShareSheet(articleId){
+  activeShareArticle = articleId;
+  document.getElementById("friendList").innerHTML = FRIENDS.map(name =>
+    '<button class="friend-row" onclick="sendToFriend(\''+name+'\')"><span class="friend-avatar" style="background:'+friendColor(name)+'">'+name.charAt(0)+'</span><b>'+name+'</b></button>'
+  ).join("");
+  document.getElementById("shareSheet").classList.add("open");
+}
+function closeShareSheet(){ document.getElementById("shareSheet").classList.remove("open"); activeShareArticle=null; }
+function markShared(articleId){
+  if(!state.shared.includes(articleId)) state.shared.push(articleId);
+  saveState(state);
+  document.querySelectorAll('[data-article="'+articleId+'"][data-kind="shared"]').forEach(btn => btn.classList.add("on"));
+}
+function copyShareLink(){
+  if(!activeShareArticle) return;
+  markShared(activeShareArticle);
+  showToast("Lien copié dans le presse-papiers");
+  closeShareSheet();
+}
+function shareVia(app){
+  if(!activeShareArticle) return;
+  markShared(activeShareArticle);
+  showToast("Partagé via " + app);
+  closeShareSheet();
+}
+function sendToFriend(name){
+  if(!activeShareArticle) return;
+  markShared(activeShareArticle);
+  pushMsg(name, {from:"me", articleId:activeShareArticle});
+  showToast("Envoyé à " + name);
+  closeShareSheet();
+  renderMessages();
+}
+
+/* ---- Article overlay (long-form fictional content) ---- */
+const ARTICLE_BANK = {
+  "Économie": {
+    sections: [
+      {h:"Ce que disent les chiffres", p:[
+        "Les derniers indicateurs publiés dessinent un tableau plus nuancé qu'il n'y paraît. D'un côté, les prix ralentissent dans plusieurs secteurs ; de l'autre, certains postes de dépenses du quotidien, comme le logement ou l'énergie, continuent de peser lourd dans le budget des ménages.",
+        "Les économistes rappellent qu'un chiffre isolé ne fait pas une tendance. Il faut regarder l'évolution sur plusieurs trimestres, comparer avec les pays voisins et distinguer ce qui relève de la conjoncture de ce qui tient à des mécanismes plus profonds."]},
+      {h:"Pourquoi cela te concerne", p:[
+        "Pour un étudiant ou un jeune actif, ces mouvements se traduisent très concrètement : le prix d'un loyer, celui des courses, les conditions d'un prêt ou les perspectives d'embauche. Comprendre les mécanismes permet d'anticiper ses propres décisions financières.",
+        "Les banques centrales, les gouvernements et les entreprises ajustent leurs stratégies en fonction de ces signaux. Leurs choix des prochains mois auront des effets visibles bien au-delà des marchés financiers."]}],
+    points: ["Un indicateur isolé ne suffit pas : on regarde la tendance sur plusieurs mois.","Le logement et l'énergie restent les postes les plus sensibles pour les ménages.","Les décisions des banques centrales influencent les prêts et l'épargne."]
+  },
+  "Géopolitique": {
+    sections: [
+      {h:"Le contexte", p:[
+        "Pour comprendre cette situation, il faut remonter à plusieurs années de tensions et d'équilibres fragiles. Les alliances se sont recomposées, les routes commerciales ont changé et chaque acteur cherche à défendre ses intérêts stratégiques sans provoquer d'escalade ouverte.",
+        "Les diplomates parlent d'un équilibre instable : une décision locale peut produire des effets en chaîne sur l'énergie, les transports maritimes ou les marchés alimentaires."]},
+      {h:"Les scénarios possibles", p:[
+        "Trois trajectoires sont généralement évoquées par les analystes : une désescalade négociée, un statu quo tendu qui s'installe dans la durée, ou une dégradation rapide en cas d'incident. Aucune n'est écartée à ce stade.",
+        "Dans tous les cas, les organisations internationales et les médiateurs jouent un rôle clé pour maintenir le dialogue, même lorsque les positions de départ paraissent très éloignées."]}],
+    points: ["Les tensions s'inscrivent dans une recomposition plus large des alliances.","Les effets se ressentent vite sur l'énergie et le commerce maritime.","La médiation internationale reste l'outil principal pour éviter l'escalade."]
+  },
+  "Politique": {
+    sections: [
+      {h:"Ce que contient le texte", p:[
+        "Le dossier s'articule autour de quelques mesures centrales, débattues depuis plusieurs semaines. Les partisans y voient une réponse attendue à des problèmes concrets ; les opposants dénoncent un calendrier trop rapide et un financement encore flou.",
+        "Au-delà des postures, les points de désaccord portent surtout sur le coût, les bénéficiaires et la date d'application, trois éléments qui conditionnent l'effet réel sur la vie quotidienne."]},
+      {h:"Ce qui change concrètement", p:[
+        "Si le texte est adopté, certaines règles s'appliqueront dès la prochaine rentrée, tandis que d'autres nécessiteront des décrets d'application. Les personnes concernées devront donc surveiller les échéances officielles pour connaître précisément leurs droits.",
+        "Le débat parlementaire se poursuit et des amendements peuvent encore modifier l'équilibre général. Les prochaines séances seront décisives."]}],
+    points: ["Le désaccord porte surtout sur le coût, les bénéficiaires et le calendrier.","Certaines mesures nécessiteront des décrets d'application.","Des amendements peuvent encore changer le texte final."]
+  },
+  "Tech": {
+    sections: [
+      {h:"Comment ça marche", p:[
+        "Derrière cette innovation se cache un principe simple à résumer : traiter beaucoup plus d'informations, plus vite, avec moins d'énergie. Les ingénieurs combinent pour cela de nouveaux composants, des algorithmes plus efficaces et des données mieux organisées.",
+        "Les premières démonstrations impressionnent, mais les chercheurs restent prudents : il existe souvent un écart entre une démonstration en laboratoire et un produit fiable, utilisé par des millions de personnes."]},
+      {h:"Quels usages demain ?", p:[
+        "Les applications envisagées vont de la création de contenus à la santé, en passant par la mobilité. Chaque usage soulève aussi des questions : protection des données, impact environnemental et répartition des bénéfices.",
+        "Les régulateurs européens suivent le sujet de près et préparent des règles pour encadrer son déploiement sans freiner la recherche."]}],
+    points: ["L'écart entre démonstration et produit fiable reste important.","Protection des données et impact énergétique sont les deux points de vigilance.","Un cadre européen de régulation est en préparation."]
+  },
+  "Culture": {
+    sections: [
+      {h:"Le phénomène", p:[
+        "Ce qui frappe d'abord, c'est l'écho rencontré auprès d'un public très large. Réseaux sociaux, librairies, salles de concert ou musées : le sujet circule partout et nourrit les conversations bien au-delà du cercle des spécialistes.",
+        "Les critiques soulignent la singularité du travail et sa capacité à parler à plusieurs générations à la fois, ce qui explique en partie son succès."]},
+      {h:"Les coulisses", p:[
+        "Derrière le résultat final se trouvent des mois de préparation, de choix artistiques et de collaborations. Comprendre ces coulisses permet de regarder l'œuvre autrement et d'en saisir les références cachées.",
+        "Pour prolonger la découverte, plusieurs expositions, rééditions et rencontres sont annoncées dans les semaines à venir."]}],
+    points: ["Le succès dépasse largement le cercle des initiés.","Les références cachées se découvrent en connaissant les coulisses.","De nouveaux rendez-vous sont annoncés dans les prochaines semaines."]
+  },
+  "Science": {
+    sections: [
+      {h:"La découverte", p:[
+        "L'équipe à l'origine de ce résultat a combiné des observations de terrain, des simulations numériques et plusieurs vérifications indépendantes. C'est cette accumulation de preuves qui donne du poids à la conclusion.",
+        "Reste à la confirmer par d'autres laboratoires : en science, un résultat n'est solide que lorsqu'il a été reproduit."]},
+      {h:"Pourquoi c'est important", p:[
+        "Les retombées possibles concernent la santé, l'environnement ou notre compréhension de l'univers. Même lorsque l'application n'est pas immédiate, chaque avancée ouvre de nouvelles questions de recherche.",
+        "Les chercheurs insistent aussi sur la nécessité de bien communiquer les limites de l'étude pour éviter les conclusions hâtives."]}],
+    points: ["Le résultat repose sur plusieurs méthodes indépendantes.","Une confirmation par d'autres équipes est nécessaire.","Les limites de l'étude doivent être rappelées."]
+  },
+  "Sport": {
+    sections: [
+      {h:"Les chiffres qui comptent", p:[
+        "Les statistiques avancées changent la manière de lire un match ou une saison. Efficacité, rythme, qualité des tirs ou charge de travail : ces indicateurs permettent de repérer des tendances invisibles à l'œil nu.",
+        "Les clubs les utilisent pour recruter, préparer les rencontres et prévenir les blessures, en complément du regard des entraîneurs."]},
+      {h:"Et après ?", p:[
+        "Les prochaines échéances du calendrier diront si cette dynamique est durable. Les observateurs resteront attentifs à la régularité des performances plutôt qu'aux seuls résultats ponctuels.",
+        "Pour les supporters comme pour les dirigeants, l'enjeu est de transformer ces données en décisions concrètes sur le terrain."]}],
+    points: ["Les données complètent le regard des entraîneurs, elles ne le remplacent pas.","La régularité compte plus qu'un résultat isolé.","Recrutement et prévention des blessures sont les premiers usages."]
+  },
+  "Environnement": {
+    sections: [
+      {h:"État des lieux", p:[
+        "Les observations récentes confirment une évolution rapide des conditions locales : températures, précipitations, état des sols et de la biodiversité. Les écarts avec les moyennes habituelles sont désormais fréquents.",
+        "Les scientifiques rappellent que ces phénomènes s'inscrivent dans une tendance de long terme, même si chaque événement a ses causes propres."]},
+      {h:"Les réponses possibles", p:[
+        "Adaptation des territoires, restauration des milieux naturels, évolution des pratiques agricoles : les leviers existent, et certains donnent déjà des résultats encourageants à l'échelle locale.",
+        "Leur généralisation dépend toutefois des financements disponibles et de la coordination entre collectivités, entreprises et citoyens."]}],
+    points: ["Les écarts aux moyennes habituelles deviennent fréquents.","Des solutions locales donnent déjà des résultats.","La coordination entre acteurs conditionne leur généralisation."]
+  }
+};
+const ARTICLE_INTROS = [
+  "Dans cet article, on revient sur les faits, on explique le contexte et on détaille ce qui pourrait changer dans les prochaines semaines.",
+  "Pas besoin d'être spécialiste : voici l'essentiel à retenir, expliqué simplement et sans jargon, pour se faire sa propre opinion.",
+  "Le sujet est complexe, mais il se résume en quelques idées clés. On les reprend ici, étape par étape, avec les points de vigilance."
+];
+function articleHtml(article){
+  if(article.published){
+    const esc = t => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+    const paras = (article.body || "").split(/\n+/).map(t => t.trim()).filter(Boolean);
+    let html = "<p><b>« "+esc(article.title)+" »</b></p>";
+    html += paras.length ? paras.map(t => "<p>"+esc(t)+"</p>").join("") : "<p>Ce média n'a pas encore ajouté de version écrite à cette vidéo.</p>";
+    html += '<p class="art-disclaimer">Publié par '+esc(article.source)+' sur Declick.</p>';
+    return html;
+  }
+  const bank = ARTICLE_BANK[article.topic] || ARTICLE_BANK["Économie"];
+  const h = hashStr(article.id);
+  let html = "<p><b>« "+article.title+" »</b> : le sujet fait réagir, et pour de bonnes raisons. Il touche à des enjeux concrets et suscite des lectures très différentes selon les interlocuteurs.</p>";
+  html += "<p>"+ARTICLE_INTROS[h % ARTICLE_INTROS.length]+"</p>";
+  bank.sections.forEach((sec, idx) => {
+    html += "<h2>"+sec.h+"</h2>" + sec.p.map(t => "<p>"+t+"</p>").join("");
+    if(idx === 0){
+      html += '<div class="keypoints"><b>À retenir</b><ul>' + bank.points.map(t => "<li>"+t+"</li>").join("") + "</ul></div>";
+    }
+  });
+  html += "<h2>Pour aller plus loin</h2><p>Ce dossier va continuer d'évoluer. Active les notifications du compte "+article.source+" pour suivre les prochains développements, et retrouve d'autres formats courts sur le même sujet dans ton fil « Pour toi ».</p>";
+  html += '<p class="art-disclaimer">Contenu fictif rédigé pour la démonstration du prototype Declick.</p>';
+  return html;
+}
+let currentArticleId = null;
+function openArticle(articleId){
+  const a = ALL_ARTICLES[articleId]; if(!a) return;
+  currentArticleId = articleId;
+  const body = articleHtml(a);
+  const words = body.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
+  document.getElementById("articleHero").style.background = a.grad;
+  document.getElementById("articleTag").textContent = a.topic || "Actualité";
+  document.getElementById("articleTitle").textContent = a.title;
+  document.getElementById("articleSrc").textContent = a.source;
+  document.getElementById("articleDuration").textContent = Math.max(2, Math.round(words / 190)) + " min";
+  document.getElementById("articleParagraphs").innerHTML = body;
+  const ov = document.getElementById("articleOverlay");
+  ov.querySelector(".article-body").scrollTop = 0;
+  bringToFront(ov);
+  ov.classList.add("open");
+}
+function closeArticle(){ document.getElementById("articleOverlay").classList.remove("open"); }
+function openJournalOfArticle(){
+  const a = ALL_ARTICLES[currentArticleId]; if(!a) return;
+  openJournal(JOURNAL_BY_NAME[a.source].id);
+}
+
+/* ---- Journal pages + follow ---- */
+let openedJournalId = null;
+function isFollowing(id){ return state.following.includes(id); }
+function toggleFollow(id){
+  const i = state.following.indexOf(id);
+  if(i >= 0){ state.following.splice(i,1); showToast("Abonnement retiré"); }
+  else { state.following.push(id); showToast("Tu suis maintenant " + JOURNAL_BY_ID[id].name); }
+  saveState(state);
+  updateLibraryCounts();
+  if(document.getElementById("journalOverlay").classList.contains("open")) renderJournal();
+  if(document.getElementById("searchOverlay").classList.contains("open")) renderSearch();
+  if(document.getElementById("followingSheet").classList.contains("open")) renderFollowingList();
+}
+function articlesOfJournal(j){
+  const seen = {};
+  return Object.values(ALL_ARTICLES).filter(a => {
+    if(a.source !== j.name || seen[a.title]) return false;
+    seen[a.title] = true; return true;
+  });
+}
+function renderJournal(){
+  const j = JOURNAL_BY_ID[openedJournalId]; if(!j) return;
+  const arts = articlesOfJournal(j);
+  const fol = isFollowing(j.id);
+  document.getElementById("journalHeadTitle").textContent = j.name;
+  document.getElementById("journalContent").innerHTML =
+    '<div class="journal-top"><div class="journal-avatar" style="background:'+j.color+'">'+j.name.charAt(0)+'</div>'+
+    '<p class="journal-name">'+j.name+'</p><p class="journal-handle">'+j.handle+'</p>'+
+    '<p class="journal-bio">'+j.bio+'</p>'+
+    '<button class="follow-btn'+(fol?" following":"")+'" onclick="toggleFollow(\''+j.id+'\')">'+(fol?"Abonné":"Suivre")+'</button></div>'+
+    '<div class="journal-stats"><div><b>'+arts.length+'</b><span>Contenus</span></div><div><b>'+followerCount(j).toLocaleString("fr-FR")+'</b><span>Abonnés</span></div></div>'+
+    '<p class="section-label">Contenus publiés</p>'+
+    arts.map(a => '<button class="j-article" onclick="openArticle(\''+a.id+'\')"><span class="thumb" style="background:'+a.grad+'"></span><span><b>'+a.title+'</b><small>'+(a.topic||"Actualité")+' · '+a.duration+'</small></span></button>').join("");
+}
+function openJournal(id){
+  if(!JOURNAL_BY_ID[id]) return;
+  closeFollowing();
+  openedJournalId = id;
+  renderJournal();
+  const ov = document.getElementById("journalOverlay");
+  ov.querySelector(".page-scroll").scrollTop = 0;
+  bringToFront(ov);
+  ov.classList.add("open");
+}
+function closeJournal(){ document.getElementById("journalOverlay").classList.remove("open"); openedJournalId = null; }
+
+/* ---- Search ---- */
+function journalRowHtml(j){
+  const fol = isFollowing(j.id);
+  return '<div class="journal-row" onclick="openJournal(\''+j.id+'\')"><span class="j-av" style="background:'+j.color+'">'+j.name.charAt(0)+'</span>'+
+    '<span class="j-info"><b>'+j.name+'</b><span>'+j.handle+'</span></span>'+
+    '<button class="follow-btn small'+(fol?" following":"")+'" onclick="event.stopPropagation();toggleFollow(\''+j.id+'\')">'+(fol?"Abonné":"Suivre")+'</button></div>';
+}
+function openSearch(){
+  document.getElementById("searchInput").value = "";
+  renderSearch();
+  const ov = document.getElementById("searchOverlay");
+  bringToFront(ov);
+  ov.classList.add("open");
+  setTimeout(() => document.getElementById("searchInput").focus(), 60);
+}
+function closeSearch(){ document.getElementById("searchOverlay").classList.remove("open"); }
+function renderSearch(){
+  const q = normText(document.getElementById("searchInput").value.trim());
+  const js = q ? JOURNALS.filter(j => normText(j.name).includes(q) || normText(j.handle).includes(q)) : JOURNALS;
+  let html = '<p class="section-label">'+(q ? "Journaux" : "Journaux à découvrir")+'</p>';
+  html += js.length ? js.map(journalRowHtml).join("") : '<p class="no-result">Aucun journal trouvé.</p>';
+  if(q){
+    const seen = {};
+    const arts = Object.values(ALL_ARTICLES).filter(a => {
+      if(!(normText(a.title).includes(q) || normText(a.source).includes(q) || normText(a.topic||"").includes(q)) || seen[a.title]) return false;
+      seen[a.title] = true; return true;
+    }).slice(0, 12);
+    html += '<p class="section-label" style="margin-top:18px">Contenus</p>';
+    html += arts.length ? arts.map(a => '<button class="j-article" onclick="openArticle(\''+a.id+'\')"><span class="thumb" style="background:'+a.grad+'"></span><span><b>'+a.title+'</b><small>'+a.source+' · '+a.duration+'</small></span></button>').join("") : '<p class="no-result">Aucun contenu trouvé.</p>';
+  }
+  document.getElementById("searchResults").innerHTML = html;
+}
+
+/* ---- Following list (profile) ---- */
+function renderFollowingList(){
+  const js = state.following.map(id => JOURNAL_BY_ID[id]).filter(Boolean);
+  document.getElementById("followingList").innerHTML = js.length ? js.map(journalRowHtml).join("") : '<p class="no-result">Tu ne suis encore aucun compte. Utilise la loupe pour trouver des journaux.</p>';
+}
+function openFollowing(){ renderFollowingList(); document.getElementById("followingSheet").classList.add("open"); }
+function closeFollowing(){ document.getElementById("followingSheet").classList.remove("open"); }
+
+/* ---- Chats ---- */
+const CHAT_REPLIES = ["Ah oui, bien vu !","Je regarde ça tout à l'heure.","Haha, exactement ce que je pensais.","Merci pour le partage, c'est intéressant.","On en reparle ce soir ?","Top, j'envoie ça à d'autres amis aussi."];
+let activeChat = null;
+function pushMsg(name, msg){
+  if(!state.chats[name]) state.chats[name] = [];
+  state.chats[name].push(Object.assign({ts: Date.now()}, msg));
+  saveState(state);
+}
+function renderChat(){
+  const name = activeChat; if(!name) return;
+  const msgs = state.chats[name] || [];
+  const box = document.getElementById("chatMsgs");
+  if(msgs.length === 0){
+    box.innerHTML = '<p class="chat-empty">Dis bonjour à '+name+' ou envoie-lui un article.</p>';
+    return;
+  }
+  let html = "", last = 0;
+  msgs.forEach(m => {
+    if(m.ts - last > 30 * 60000){ html += '<div class="bubble-time">'+timeAgo(m.ts)+'</div>'; }
+    last = m.ts;
+    if(m.articleId && ALL_ARTICLES[m.articleId]){
+      const a = ALL_ARTICLES[m.articleId];
+      html += '<button class="share-card '+m.from+'" onclick="openArticle(\''+a.id+'\')"><div class="sc-img" style="background:'+a.grad+'"></div><div class="sc-body"><b>'+a.title+'</b><small>'+a.source+'</small></div></button>';
+    } else {
+      html += '<div class="bubble '+m.from+'">'+String(m.text).replace(/</g,"&lt;")+'</div>';
+    }
+  });
+  box.innerHTML = html;
+  box.scrollTop = box.scrollHeight;
+}
+function openChat(name){
+  activeChat = name;
+  const av = document.getElementById("chatAvatar");
+  av.textContent = name.charAt(0); av.style.background = friendColor(name);
+  document.getElementById("chatName").textContent = name;
+  document.getElementById("chatInput").value = "";
+  renderChat();
+  const ov = document.getElementById("chatOverlay");
+  bringToFront(ov);
+  ov.classList.add("open");
+}
+function closeChat(){
+  document.getElementById("chatOverlay").classList.remove("open");
+  activeChat = null;
+  renderMessages();
+}
+function sendChatMessage(){
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if(!text || !activeChat) return;
+  const name = activeChat, cid = currentAccountId;
+  pushMsg(name, {from:"me", text:text});
+  input.value = "";
+  renderChat(); renderMessages();
+  setTimeout(() => {
+    if(currentAccountId !== cid || !state.chats[name]) return;
+    pushMsg(name, {from:"them", text: CHAT_REPLIES[(text.length + state.chats[name].length) % CHAT_REPLIES.length]});
+    if(activeChat === name) renderChat();
+    renderMessages();
+  }, 1300);
+}
+
+/* ---- New message ---- */
+function openNewMessage(){
+  document.getElementById("newMsgFilter").value = "";
+  renderNewMessageList();
+  document.getElementById("newMsgSheet").classList.add("open");
+}
+function closeNewMessage(){ document.getElementById("newMsgSheet").classList.remove("open"); }
+function renderNewMessageList(){
+  const q = normText(document.getElementById("newMsgFilter").value.trim());
+  const list = FRIENDS.filter(n => !q || normText(n).includes(q));
+  document.getElementById("newMsgList").innerHTML = list.length ? list.map(name =>
+    '<button class="friend-row" onclick="startChatWith(\''+name+'\')"><span class="friend-avatar" style="background:'+friendColor(name)+'">'+name.charAt(0)+'</span><b>'+name+'</b></button>'
+  ).join("") : '<p class="no-result">Aucun ami trouvé.</p>';
+}
+function startChatWith(name){ closeNewMessage(); openChat(name); }
+
+let activeCommentArticle = null;
+function openComments(articleId){
+  activeCommentArticle = articleId;
+  const seeded = seededComments(articleId);
+  const added = state.comments[articleId] || [];
+  const all = seeded.concat(added);
+  document.getElementById("commentList").innerHTML = all.map(c =>
+    '<div class="comment-item"><div class="comment-avatar">'+c.author.charAt(0)+'</div><div class="comment-body"><b>'+c.author+'</b><p>'+c.text+'</p></div></div>'
+  ).join("");
+  document.getElementById("commentSheet").classList.add("open");
+}
+function closeComments(){ document.getElementById("commentSheet").classList.remove("open"); activeCommentArticle=null; }
+function postComment(){
+  const input = document.getElementById("commentInput");
+  const text = input.value.trim();
+  if(!text || !activeCommentArticle) return;
+  if(!state.comments[activeCommentArticle]) state.comments[activeCommentArticle] = [];
+  const authorName = (state.account && state.account.name) || "Toi";
+  state.comments[activeCommentArticle].push({author:authorName, text:text});
+  saveState(state);
+  input.value = "";
+  openComments(activeCommentArticle);
+  document.querySelectorAll('[data-comment-count-for="'+activeCommentArticle+'"]').forEach(el => {
+    el.textContent = seededComments(activeCommentArticle).length + state.comments[activeCommentArticle].length;
+  });
+}
+
+function renderReel(article, opts){
+  const isOn = k => state[k].indexOf(article.id) >= 0;
+  const numHtml = opts.number ? '<p class="num">'+opts.number+'</p>' : "";
+  const tagHtml = opts.tag ? '<p class="chip-tag">'+opts.tag+'</p>' : '<p class="chip-tag">Socle commun</p>';
+  const likeCount = baseLikes(article.id) + (isOn("liked")?1:0);
+  const commentCount = seededComments(article.id).length + ((state.comments[article.id]||[]).length);
+  return (
+    '<div class="reel" style="background:'+article.grad+'">'+
+      '<div class="scrim"></div>'+tagHtml+numHtml+
+      '<div class="content"><h3>'+article.title+'</h3>'+
+        '<div class="src"><span class="dot"></span><button class="src-link" onclick="openJournal(\''+JOURNAL_BY_NAME[article.source].id+'\')">'+article.source+'</button><time> · '+article.duration+'</time></div>'+
+        '<button class="read-article-link" onclick="openArticle(\''+article.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16M4 12h10M4 19h7"/></svg>Voir l\'article</button>'+
+      '</div>'+
+      '<div class="rail">'+
+        '<div class="railbtn"><button data-article="'+article.id+'" data-kind="liked" class="'+(isOn("liked")?"on":"")+'" onclick="toggleSimple(\''+article.id+'\',\'liked\',\'Ajouté aux likes\',\'Like retiré\')" aria-label="J\'aime">'+ICONS.like+'</button><span class="count" data-count-for="'+article.id+'">'+likeCount+'</span></div>'+
+        '<div class="railbtn"><button onclick="openComments(\''+article.id+'\')" aria-label="Commenter">'+ICONS.comment+'</button><span class="count" data-comment-count-for="'+article.id+'">'+commentCount+'</span></div>'+
+        '<div class="railbtn"><button data-article="'+article.id+'" data-kind="saved" class="'+(isOn("saved")?"on":"")+'" onclick="toggleSimple(\''+article.id+'\',\'saved\',\'Enregistré\',\'Retiré des enregistrements\')" aria-label="Enregistrer">'+ICONS.save+'</button></div>'+
+        '<div class="railbtn"><button data-article="'+article.id+'" data-kind="shared" class="'+(isOn("shared")?"on":"")+'" onclick="openShareSheet(\''+article.id+'\')" aria-label="Partager">'+ICONS.share+'</button></div>'+
+        '<div class="railbtn"><button onclick="openReportSheet(\''+article.id+'\')" class="'+(isOn("reported")?"reported":"")+'" aria-label="Signaler">'+ICONS.report+'</button></div>'+
+      '</div>'+
+    '</div>'
+  );
+}
+
+function renderForYou(){
+  const feed = document.getElementById("foryouFeed");
+  const items = PUBLISHED.concat(FORYOU_POOL).filter(a => state.interests.includes(a.topic) && !state.reported.includes(a.id));
+  if(items.length===0){ feed.innerHTML = '<div class="empty-state"><p>Aucun contenu pour l\'instant. Va dans ton profil pour choisir des centres d\'intérêt.</p></div>'; return; }
+  feed.innerHTML = items.map(a => renderReel(a, {tag:a.topic})).join("") +
+    '<div class="end-of-feed"><p>Tu as tout vu pour aujourd\'hui.</p><p>Reviens demain pour un nouveau feed.</p></div>';
+}
+function renderActu(){
+  const feed = document.getElementById("actuFeed");
+  const items = PUBLISHED.concat(ACTU_TODAY).filter(a => !state.reported.includes(a.id));
+  feed.innerHTML = items.map((a,i) => renderReel(a, {number:String(i+1).padStart(2,"0")})).join("") +
+    '<div class="end-of-feed"><p>Fin de l\'actu du jour.</p></div>';
+}
+
+let activeContentList = "saved";
+function showContentList(name){
+  activeContentList = name;
+  document.querySelectorAll(".content-tab").forEach(b => b.classList.toggle("active", b.dataset.list===name));
+  renderContentGrid();
+}
+function renderContentGrid(){
+  const grid = document.getElementById("contentGrid");
+  const ids = state[activeContentList] || [];
+  if(ids.length===0){
+    const labels = {saved:"Rien d'enregistré pour le moment.", liked:"Rien d'aimé pour le moment.", shared:"Rien de partagé pour le moment."};
+    grid.innerHTML = '<p class="empty-mini">'+labels[activeContentList]+'</p>';
+    return;
+  }
+  grid.innerHTML = ids.map(id => {
+    const a = ALL_ARTICLES[id]; if(!a) return "";
+    return '<button class="grid-tile" style="background:'+a.grad+';border:none;padding:0;cursor:pointer;text-align:left;font-family:inherit" onclick="openArticle(\''+id+'\')"><div class="tile-scrim"></div><span>'+a.title+'</span></button>';
+  }).join("");
+  updateLibraryCounts();
+}
+function updateLibraryCounts(){
+  const set = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  set("cntSaved", state.saved.length); set("cntLiked", state.liked.length); set("statFollowing", state.following.length);
+}
+
+function renderInterestSummary(){ document.getElementById("interestSummary").innerHTML = state.interests.map(t => '<span class="pill-static">'+t+'</span>').join(""); }
+
+function renderMessages(){
+  const wrap = document.getElementById("messagesWrap");
+  if(!wrap) return;
+  const head = '<div class="messages-head"><h2>Messages</h2><button class="compose-btn" onclick="openNewMessage()" aria-label="Nouveau message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.500 9.500a2.100 2.100 0 0 0-3-3L5 17v3Z"/><path d="M13.500 7.500l3 3"/></svg></button></div>';
+  const names = Object.keys(state.chats || {}).filter(n => state.chats[n].length > 0);
+  if(names.length === 0){
+    wrap.innerHTML = head + '<div class="messages-empty"><p>Aucune discussion pour l\'instant. Appuie sur le crayon pour écrire à un ami.</p></div>';
+    return;
+  }
+  names.sort((a,b) => state.chats[b][state.chats[b].length-1].ts - state.chats[a][state.chats[a].length-1].ts);
+  wrap.innerHTML = head + names.map(name => {
+    const msgs = state.chats[name], m = msgs[msgs.length-1];
+    let preview;
+    if(m.articleId && ALL_ARTICLES[m.articleId]) preview = (m.from==="me" ? "Tu as partagé : " : "Article : ") + ALL_ARTICLES[m.articleId].title;
+    else preview = (m.from==="me" ? "Toi : " : "") + m.text;
+    preview = String(preview).replace(/</g,"&lt;");
+    return '<div class="thread" onclick="openChat(\''+name+'\')"><span class="friend-avatar" style="background:'+friendColor(name)+'">'+name.charAt(0)+'</span>'+
+      '<div class="thread-info"><b>'+name+'</b><p>'+preview+'</p></div><span class="thread-time">'+timeAgo(m.ts)+'</span></div>';
+  }).join("");
+}
+
+function renderAll(){ renderBrain(); renderForYou(); renderActu(); renderInterestSummary(); renderContentGrid(); renderMessages(); applyAccountType(); }
+function showTab(name){
+  document.querySelectorAll(".tabpanel").forEach(p => p.classList.remove("visible"));
+  document.getElementById("panel-"+name).classList.add("visible");
+  document.querySelectorAll(".tabbtn").forEach(b => b.classList.remove("active"));
+  document.querySelector('.tabbtn[data-tab="'+name+'"]').classList.add("active");
+}
+
+if(state.account && state.interests.length>0){ applyDailyStreakLogic(); enterApp(); }
+else if(Object.keys(loadAccounts()).length>0){ document.getElementById("loginScreen").classList.add("visible"); renderLoginScreen(); }
+else { showSignupType(); }
+setTimeout(() => { const sp = document.getElementById("splash"); if(sp) sp.classList.add("hide"); }, 2100);
+</script>
+</body>
+</html>
